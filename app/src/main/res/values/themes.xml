@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Se cambia el parent a DayNight para que el sistema no fuerce el modo claro al iniciar -->
+    <style name="Theme.Trainium2" parent="Theme.Material3.DayNight.NoActionBar">
+        <!-- Opcional: Color de la barra de estado para que coincida con la app -->
+        <item name="android:statusBarColor">?android:attr/colorBackground</item>
+        <item name="android:windowBackground">?android:attr/colorBackground</item>
+    </style>
+</resources>

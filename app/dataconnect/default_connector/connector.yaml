@@ -1,0 +1,5 @@
+connectorId: "default"
+generate:
+  kotlinSdk:
+    outputDir: "../../src/main/java/com/example/trainium2/dataconnect"
+    package: "com.example.trainium2.dataconnect"

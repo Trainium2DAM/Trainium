@@ -1,0 +1,12 @@
+specVersion: "v1alpha"
+serviceId: "bbdd-practicas-service"
+location: "europe-southwest1"
+schema:
+  - source: "./schema"
+    datasource:
+      postgresql:
+        database: "fdcdb"
+        cloudSql:
+          instanceId: "bbdd-trainium"
+connectorDirs:
+  - "./default_connector"

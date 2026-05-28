@@ -1,0 +1,65 @@
+# --- USUARIOS ---
+query GetUsuario($id: Int!) @auth(level: PUBLIC) {
+  usuario(id: $id) {
+    id, nombre, email, telefono, premium, admin, dni
+  }
+}
+
+query GetUsuarioByDni($dni: String!) @auth(level: PUBLIC) {
+  usuarios(where: {dni: {eq: $dni}}) {
+    id, nombre, contraseniaHash, admin, premium
+  }
+}
+
+mutation RegisterUser($nombre: String!, $dni: String!, $email: String!, $pass: String!, $telf: String!) @auth(level: PUBLIC) {
+  usuario_insert(data: {
+    nombre: $nombre, dni: $dni, email: $email, contraseniaHash: $pass, telefono: $telf, admin: 0, premium: false
+  })
+}
+
+# --- MÁQUINAS ---
+query GetMaquinas @auth(level: PUBLIC) {
+  maquinasList {
+    id, nombre, tipo, estado, descripcion, operativa
+  }
+}
+
+# --- RESERVAS ---
+query GetReservasByUser($idUsuario: Int!) @auth(level: PUBLIC) {
+  reservasList(where: {idUsuarioId: {eq: $idUsuario}}) {
+    id, fecha, horaInicio, horaFin, estado
+    idMaquina { nombre }
+  }
+}
+
+mutation CreateReserva($idUsuario: Int!, $idMaquina: Int!, $fecha: Date!, $hIni: String!, $hFin: String!) @auth(level: PUBLIC) {
+  reservas_insert(data: {
+    idUsuarioId: $idUsuario, idMaquinaId: $idMaquina, fecha: $fecha, horaInicio: $hIni, horaFin: $hFin, estado: true
+  })
+}
+
+# --- PLATOS ---
+query GetPlatos @auth(level: PUBLIC) {
+  platosList(where: {visibilidad: {eq: true}}) {
+    id, nombre, descripcion, calorias, imagenUrl
+    idUsuario { nombre }
+  }
+}
+
+# --- PESO ---
+query GetPesos($idUsuario: Int!) @auth(level: PUBLIC) {
+  pesoUsuarioList(where: {idUsuarioId: {eq: $idUsuario}}, orderBy: [{fecha: DESC}]) {
+    id, peso, fecha
+  }
+}
+
+mutation AddPeso($idUsuario: Int!, $peso: Float!, $fecha: Date!) @auth(level: PUBLIC) {
+  pesoUsuario_insert(data: { idUsuarioId: $idUsuario, peso: $peso, fecha: $fecha })
+}
+
+# --- PAGOS ---
+query GetPagos($idUsuario: Int!) @auth(level: PUBLIC) {
+  pagosList(where: {idUsuarioId: {eq: $idUsuario}}, orderBy: [{fechaPago: DESC}]) {
+    id, monto, fechaPago, tipo, metodoPago
+  }
+}
