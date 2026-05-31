@@ -93,7 +93,6 @@ fun LoginScreen(
         Brush.verticalGradient(listOf(WhiteSoft.copy(0.95f), BlueLight.copy(0.92f), WhiteSoft.copy(0.95f)))
 
     Box(modifier = Modifier.fillMaxSize()) {
-        Image(painterResource(R.drawable.fondopantalla), null, Modifier.fillMaxSize(), contentScale = ContentScale.Crop)
         Box(Modifier.fillMaxSize().background(bgOverlay))
 
         Column(
