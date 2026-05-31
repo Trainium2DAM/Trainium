@@ -158,7 +158,7 @@ fun PlatosScreen(isAdmin: Boolean, idUsuario: Int, isDarkTheme: Boolean, onBack:
                     SupabaseClient.client.from("platos").insert(nueva)
                 }
                 withContext(Dispatchers.Main) {
-                    Toast.makeText(context, "🎉 Sugerencia enviada al administrador", Toast.LENGTH_LONG).show()
+                    Toast.makeText(context, "Sugerencia enviada al administrador", Toast.LENGTH_LONG).show()
                     mostrarDialogoSugerencia = false
                     nuevoTitulo = ""; nuevaReceta = ""; nuevoTiempo = ""; caloriasTexto = ""; fotoBase64 = null
                     cargarDatos()
@@ -206,7 +206,7 @@ fun PlatosScreen(isAdmin: Boolean, idUsuario: Int, isDarkTheme: Boolean, onBack:
     Box(Modifier.fillMaxSize().background(bgBrush)) {
         Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(20.dp)) {
             // Header
-            Row(Modifier.fillMaxWidth().alpha(alphaAnim), verticalAlignment = Alignment.CenterVertically) {
+            Row(Modifier.fillMaxWidth().statusBarsPadding().alpha(alphaAnim), verticalAlignment = Alignment.CenterVertically) {
                 TextButton(onClick = onBack) { Text("← Volver", color = BlueAccent, fontWeight = FontWeight.Bold) }
                 Column(Modifier.weight(1f)) {
                     Text("Nutrición", fontSize = 24.sp, fontWeight = FontWeight.Bold, color = textColor)
@@ -217,9 +217,9 @@ fun PlatosScreen(isAdmin: Boolean, idUsuario: Int, isDarkTheme: Boolean, onBack:
 
             Spacer(Modifier.height(10.dp))
             Button(
-                onClick = { mostrarDialogoSugerencia = true }, 
-                modifier = Modifier.fillMaxWidth().height(48.dp), 
-                shape = RoundedCornerShape(14.dp), 
+                onClick = { mostrarDialogoSugerencia = true },
+                modifier = Modifier.fillMaxWidth().height(48.dp),
+                shape = RoundedCornerShape(14.dp),
                 colors = ButtonDefaults.buttonColors(containerColor = BlueAccent)
             ) {
                 Icon(Icons.Default.Add, null, tint = Color.White)
@@ -234,7 +234,7 @@ fun PlatosScreen(isAdmin: Boolean, idUsuario: Int, isDarkTheme: Boolean, onBack:
                 }
             } else if (errorMsg.isNotEmpty()) {
                 Column(Modifier.fillMaxWidth(), horizontalAlignment = Alignment.CenterHorizontally) {
-                    Text("⚠️ $errorMsg", color = textColor)
+                    Text("$errorMsg", color = textColor)
                     Button(onClick = { cargarDatos() }, Modifier.padding(top = 16.dp)) { Text("Reintentar") }
                 }
             } else {
@@ -258,7 +258,7 @@ fun PlatosScreen(isAdmin: Boolean, idUsuario: Int, isDarkTheme: Boolean, onBack:
                                 textAlign = TextAlign.Center,
                                 modifier = Modifier.fillMaxWidth()
                             )
-                            
+
                             Spacer(Modifier.height(16.dp))
 
                             Box(Modifier.size(130.dp).shadow(20.dp, CircleShape, ambientColor = BlueAccent.copy(0.3f), spotColor = BlueAccent.copy(0.3f)).clip(CircleShape).background(Color.White), contentAlignment = Alignment.Center) {
@@ -271,8 +271,8 @@ fun PlatosScreen(isAdmin: Boolean, idUsuario: Int, isDarkTheme: Boolean, onBack:
                                             modifier = Modifier.fillMaxSize(),
                                             contentScale = ContentScale.Crop
                                         )
-                                    } else { Text("🍽️", fontSize = 60.sp) }
-                                } else { Text("🍽️", fontSize = 60.sp) }
+                                    } else { Icon(Icons.Default.Restaurant, null, tint = BlueAccent.copy(0.4f), modifier = Modifier.size(60.dp)) }
+                                } else { Icon(Icons.Default.Restaurant, null, tint = BlueAccent.copy(0.4f), modifier = Modifier.size(60.dp)) }
                             }
 
                             Spacer(Modifier.height(24.dp))
@@ -284,16 +284,16 @@ fun PlatosScreen(isAdmin: Boolean, idUsuario: Int, isDarkTheme: Boolean, onBack:
                             ) {
                                 Column(Modifier.padding(24.dp).fillMaxWidth(), horizontalAlignment = Alignment.CenterHorizontally) {
                                     Text(plato.nombre, fontSize = 24.sp, fontWeight = FontWeight.Bold, color = textColor, textAlign = TextAlign.Center)
-                                    
+
                                     Row(Modifier.padding(vertical = 12.dp), horizontalArrangement = Arrangement.spacedBy(16.dp), verticalAlignment = Alignment.CenterVertically) {
                                         Row(verticalAlignment = Alignment.CenterVertically) {
-                                            Text("🔥", fontSize = 16.sp)
+                                            Icon(Icons.Default.LocalFireDepartment, null, tint = Color(0xFFFF6B35), modifier = Modifier.size(16.dp))
                                             Text("${plato.calorias ?: 0.0} kcal", color = BlueAccent, fontWeight = FontWeight.Bold, modifier = Modifier.padding(start = 4.dp))
                                         }
                                         if (!plato.tiempo.isNullOrEmpty()) {
                                             VerticalDivider(modifier = Modifier.height(14.dp), color = textColor.copy(0.1f))
                                             Row(verticalAlignment = Alignment.CenterVertically) {
-                                                Text("⏱️", fontSize = 16.sp)
+                                                Icon(Icons.Default.Timer, null, tint = BlueAccent, modifier = Modifier.size(16.dp))
                                                 Text(plato.tiempo!!, color = textColor.copy(0.6f), fontWeight = FontWeight.Medium, modifier = Modifier.padding(start = 4.dp))
                                             }
                                         }
@@ -306,7 +306,7 @@ fun PlatosScreen(isAdmin: Boolean, idUsuario: Int, isDarkTheme: Boolean, onBack:
                         }
                     }
                 }
-                
+
                 // Botón Siguiente (Ciclo infinito: 1 -> 2 -> ... -> N -> 1)
                 if (listaPlatosAceptados.size > 1) {
                     Spacer(Modifier.height(24.dp))
@@ -367,7 +367,7 @@ fun PlatosScreen(isAdmin: Boolean, idUsuario: Int, isDarkTheme: Boolean, onBack:
                         if (!fotoBase64.isNullOrEmpty()) {
                             val bitmap = decodeBase64ToBitmap(fotoBase64!!)
                             if (bitmap != null) Image(bitmap = bitmap.asImageBitmap(), null, Modifier.fillMaxSize(), contentScale = ContentScale.Crop)
-                        } else { Text("🖼️ Seleccionar foto", color = BlueAccent, fontWeight = FontWeight.SemiBold) }
+                        } else { Text("Seleccionar foto", color = BlueAccent, fontWeight = FontWeight.SemiBold) }
                     }
                     Spacer(Modifier.height(12.dp))
                     OutlinedTextField(value = nuevoTitulo, onValueChange = { nuevoTitulo = it }, label = { Text("Título de la Receta") }, modifier = Modifier.fillMaxWidth(), colors = dColors)

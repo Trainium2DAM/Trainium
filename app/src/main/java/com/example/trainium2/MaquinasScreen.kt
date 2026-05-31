@@ -249,7 +249,7 @@ fun MaquinasScreen(isAdmin: Boolean, idUsuario: Int, isDarkTheme: Boolean, onBac
                     val exFin = Calendar.getInstance().apply { time = sdf.parse(res.horaFin)!! }
                     if (calInicioNueva.timeInMillis < exFin.timeInMillis && calFinNueva.timeInMillis > exInicio.timeInMillis) {
                         withContext(Dispatchers.Main) {
-                            Toast.makeText(context, "⚠️ Esta máquina ya está ocupada de ${res.horaInicio} a ${res.horaFin}", Toast.LENGTH_LONG).show()
+                            Toast.makeText(context, "Esta máquina ya está ocupada de ${res.horaInicio} a ${res.horaFin}", Toast.LENGTH_LONG).show()
                         }
                         return@launch
                     }
@@ -272,7 +272,7 @@ fun MaquinasScreen(isAdmin: Boolean, idUsuario: Int, isDarkTheme: Boolean, onBac
                     val exFin = Calendar.getInstance().apply { time = sdf.parse(res.horaFin)!! }
                     if (calInicioNueva.timeInMillis < exFin.timeInMillis && calFinNueva.timeInMillis > exInicio.timeInMillis) {
                         withContext(Dispatchers.Main) {
-                            Toast.makeText(context, "⚠️ Ya tienes una reserva de ${res.horaInicio} a ${res.horaFin}", Toast.LENGTH_LONG).show()
+                            Toast.makeText(context, "Ya tienes una reserva de ${res.horaInicio} a ${res.horaFin}", Toast.LENGTH_LONG).show()
                         }
                         return@launch
                     }
@@ -292,7 +292,7 @@ fun MaquinasScreen(isAdmin: Boolean, idUsuario: Int, isDarkTheme: Boolean, onBac
                 }
                 
                 withContext(Dispatchers.Main) {
-                    Toast.makeText(context, "✅ Reserva confirmada", Toast.LENGTH_LONG).show()
+                    Toast.makeText(context, "Reserva confirmada", Toast.LENGTH_LONG).show()
                 }
             } catch (e: Exception) {
                 withContext(Dispatchers.Main) {

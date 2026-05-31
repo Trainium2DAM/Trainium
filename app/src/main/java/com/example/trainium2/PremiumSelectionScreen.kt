@@ -10,6 +10,12 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.CheckCircle
+import androidx.compose.material.icons.filled.CreditCard
+import androidx.compose.material.icons.filled.Payments
+import androidx.compose.material.icons.filled.Star
+import androidx.compose.material.icons.filled.WorkspacePremium
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -62,12 +68,13 @@ fun PremiumSelectionScreen(idUsuario: Int, isDarkTheme: Boolean, onBack: () -> U
 
     Box(Modifier.fillMaxSize().background(bgBrush)) {
         Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(20.dp)) {
-            Row(Modifier.fillMaxWidth().alpha(alphaAnim), verticalAlignment = Alignment.CenterVertically) {
+            Row(Modifier.fillMaxWidth().statusBarsPadding().alpha(alphaAnim), verticalAlignment = Alignment.CenterVertically) {
                 TextButton(onClick = onBack) { Text("← Volver", color = BlueAccent, fontWeight = FontWeight.Bold) }
                 Column(Modifier.weight(1f)) {
                     Text("Hazte Premium", fontSize = 22.sp, fontWeight = FontWeight.Bold, color = textColor)
                     Text("Entrena sin límites", fontSize = 12.sp, color = subtitleColor)
                 }
+                Icon(Icons.Default.WorkspacePremium, null, tint = Color(0xFFFFD700), modifier = Modifier.padding(end = 4.dp))
             }
 
             Spacer(Modifier.height(30.dp))
@@ -82,11 +89,19 @@ fun PremiumSelectionScreen(idUsuario: Int, isDarkTheme: Boolean, onBack: () -> U
                     colors = CardDefaults.cardColors(containerColor = if (isSelected) BlueAccent.copy(0.1f) else cardBg)
                 ) {
                     Row(Modifier.padding(20.dp), verticalAlignment = Alignment.CenterVertically) {
+                        Box(Modifier.size(40.dp).background(BlueAccent.copy(0.1f), RoundedCornerShape(10.dp)), contentAlignment = Alignment.Center) {
+                            Icon(Icons.Default.Star, null, tint = Color(0xFFFFD700), modifier = Modifier.size(22.dp))
+                        }
+                        Spacer(Modifier.width(14.dp))
                         Column(Modifier.weight(1f)) {
                             Text(nombre, fontWeight = FontWeight.Bold, color = textColor, fontSize = 18.sp)
                             Text("$meses ${if (meses == 1) "mes" else "meses"}", color = textColor.copy(0.5f))
                         }
                         Text("${precio}€", fontSize = 24.sp, fontWeight = FontWeight.Bold, color = BlueAccent)
+                        if (isSelected) {
+                            Spacer(Modifier.width(10.dp))
+                            Icon(Icons.Default.CheckCircle, null, tint = BlueAccent, modifier = Modifier.size(20.dp))
+                        }
                     }
                 }
             }
@@ -94,14 +109,18 @@ fun PremiumSelectionScreen(idUsuario: Int, isDarkTheme: Boolean, onBack: () -> U
             Spacer(Modifier.height(24.dp))
             Text("MÉTODO DE PAGO", fontSize = 11.sp, color = textColor.copy(0.3f), fontWeight = FontWeight.Bold, letterSpacing = 3.sp)
             Row(Modifier.padding(vertical = 12.dp), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                listOf("Tarjeta de crédito", "PayPal").forEach { metodo ->
+                listOf("Tarjeta de crédito" to Icons.Default.CreditCard, "PayPal" to Icons.Default.Payments).forEach { (metodo, icon) ->
                     val isSelected = metodoSeleccionado == metodo
                     Button(
                         onClick = { metodoSeleccionado = metodo },
                         modifier = Modifier.weight(1f),
                         shape = RoundedCornerShape(12.dp),
                         colors = ButtonDefaults.buttonColors(containerColor = if (isSelected) BlueAccent else cardBg)
-                    ) { Text(metodo, fontSize = 12.sp, color = if (isSelected) Color.White else textColor) }
+                    ) {
+                        Icon(icon, null, tint = if (isSelected) Color.White else textColor.copy(0.6f), modifier = Modifier.size(16.dp))
+                        Spacer(Modifier.width(6.dp))
+                        Text(metodo, fontSize = 12.sp, color = if (isSelected) Color.White else textColor)
+                    }
                 }
             }
 
@@ -120,7 +139,7 @@ fun PremiumSelectionScreen(idUsuario: Int, isDarkTheme: Boolean, onBack: () -> U
             Button(
                 onClick = {
                     if (planSeleccionado.isEmpty() || metodoSeleccionado.isEmpty()) { Toast.makeText(context, "Completa la selección", Toast.LENGTH_SHORT).show(); return@Button }
-                    
+
                     scope.launch {
                         try {
                             val plan = planes.first { it.first == planSeleccionado }
@@ -140,7 +159,7 @@ fun PremiumSelectionScreen(idUsuario: Int, isDarkTheme: Boolean, onBack: () -> U
                             withContext(Dispatchers.IO) {
                                 // 1. Registrar pago
                                 SupabaseClient.client.from("pagos").insert(nuevoPago)
-                                
+
                                 // 2. Actualizar estado premium del usuario
                                 SupabaseClient.client.from("usuarios").update({
                                     set("premium", true)
@@ -152,7 +171,7 @@ fun PremiumSelectionScreen(idUsuario: Int, isDarkTheme: Boolean, onBack: () -> U
                             }
 
                             withContext(Dispatchers.Main) {
-                                Toast.makeText(context, "¡Ya eres Premium! ⭐", Toast.LENGTH_LONG).show()
+                                Toast.makeText(context, "¡Ya eres Premium!", Toast.LENGTH_LONG).show()
                                 onSuccess()
                             }
                         } catch (e: Exception) {
@@ -168,7 +187,11 @@ fun PremiumSelectionScreen(idUsuario: Int, isDarkTheme: Boolean, onBack: () -> U
                 contentPadding = PaddingValues()
             ) {
                 Box(Modifier.fillMaxSize().background(Brush.horizontalGradient(listOf(BlueAccent, BlueElectric)), RoundedCornerShape(16.dp)), contentAlignment = Alignment.Center) {
-                    Text("CONFIRMAR PAGO", fontWeight = FontWeight.Bold, color = Color.White)
+                    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.Center) {
+                        Icon(Icons.Default.CheckCircle, null, tint = Color.White, modifier = Modifier.size(18.dp))
+                        Spacer(Modifier.width(8.dp))
+                        Text("CONFIRMAR PAGO", fontWeight = FontWeight.Bold, color = Color.White)
+                    }
                 }
             }
         }

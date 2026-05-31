@@ -16,6 +16,13 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Star
+import androidx.compose.material.icons.filled.Person
+import androidx.compose.material.icons.filled.Email
+import androidx.compose.material.icons.filled.Phone
+import androidx.compose.material.icons.filled.Lock
+import androidx.compose.material.icons.filled.Save
+import androidx.compose.material.icons.filled.CreditCard
+import androidx.compose.material3.Icon
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -55,7 +62,7 @@ fun EditProfileScreen(
     var isPremium by remember { mutableStateOf(false) }
     var fotoBase64 by remember { mutableStateOf<String?>(null) }
     var cargando by remember { mutableStateOf(true) }
-    
+
     val scope = rememberCoroutineScope()
     val context = LocalContext.current
 
@@ -83,20 +90,17 @@ fun EditProfileScreen(
     val formAlpha by animateFloatAsState(if (formVisible) 1f else 0f, tween(500), label = "f")
     val premiumAlpha by animateFloatAsState(if (premiumVisible) 1f else 0f, tween(500), label = "p")
 
-    val infiniteTransition = rememberInfiniteTransition(label = "g")
-    val glowAlpha by infiniteTransition.animateFloat(0.1f, 0.3f, infiniteRepeatable(tween(2000), RepeatMode.Reverse), label = "ga")
-
     val textColor = if (isDarkTheme) Color.White else BlueDark
     val subtitleColor = if (isDarkTheme) Color.White.copy(0.35f) else BlueDark.copy(0.4f)
     val cardBg = if (isDarkTheme) Color(0xFF162347) else Color.White
 
     val inputColors = OutlinedTextFieldDefaults.colors(
-        focusedBorderColor = BlueAccent, 
+        focusedBorderColor = BlueAccent,
         unfocusedBorderColor = if (isDarkTheme) Color.White.copy(0.15f) else BlueDark.copy(0.15f),
-        focusedLabelColor = BlueAccent, 
+        focusedLabelColor = BlueAccent,
         unfocusedLabelColor = if (isDarkTheme) Color.White.copy(0.4f) else BlueDark.copy(0.4f),
-        cursorColor = BlueAccent, 
-        focusedTextColor = textColor, 
+        cursorColor = BlueAccent,
+        focusedTextColor = textColor,
         unfocusedTextColor = textColor.copy(0.9f)
     )
 
@@ -143,7 +147,7 @@ fun EditProfileScreen(
 
     Box(Modifier.fillMaxSize().background(bgBrush)) {
         Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(20.dp)) {
-            Row(Modifier.fillMaxWidth().alpha(headerAlpha), verticalAlignment = Alignment.CenterVertically) {
+            Row(Modifier.fillMaxWidth().statusBarsPadding().alpha(headerAlpha), verticalAlignment = Alignment.CenterVertically) {
                 TextButton(onClick = onBack) { Text("← Volver", color = BlueAccent, fontWeight = FontWeight.Bold) }
                 Column(Modifier.weight(1f)) {
                     Text("Ajustes de Perfil", fontSize = 22.sp, fontWeight = FontWeight.Bold, color = textColor)
@@ -161,7 +165,7 @@ fun EditProfileScreen(
                     Box(
                         Modifier
                             .size(100.dp)
-                            .shadow(20.dp, CircleShape, ambientColor = BlueAccent.copy(glowAlpha), spotColor = BlueAccent.copy(glowAlpha))
+                            .shadow(8.dp, CircleShape)
                             .background(Brush.linearGradient(listOf(BlueAccent.copy(0.2f), BlueElectric.copy(0.1f))), CircleShape)
                             .clip(CircleShape)
                             .clickable { launcher.launch("image/*") },
@@ -177,12 +181,12 @@ fun EditProfileScreen(
                                     contentScale = ContentScale.Crop
                                 )
                             } else {
-                                Text(if (nombre.isNotEmpty()) nombre.first().uppercaseChar().toString() else "👤", fontSize = 36.sp, fontWeight = FontWeight.Bold, color = BlueAccent)
+                                Text(if (nombre.isNotEmpty()) nombre.first().uppercaseChar().toString() else "?", fontSize = 36.sp, fontWeight = FontWeight.Bold, color = BlueAccent)
                             }
                         } else {
-                            Text(if (nombre.isNotEmpty()) nombre.first().uppercaseChar().toString() else "👤", fontSize = 36.sp, fontWeight = FontWeight.Bold, color = BlueAccent)
+                            Text(if (nombre.isNotEmpty()) nombre.first().uppercaseChar().toString() else "?", fontSize = 36.sp, fontWeight = FontWeight.Bold, color = BlueAccent)
                         }
-                        
+
                         // Overlay para indicar que se puede editar
                         Box(Modifier.fillMaxSize().background(Color.Black.copy(0.2f)), contentAlignment = Alignment.BottomCenter) {
                             Text("EDITAR", color = Color.White, fontSize = 10.sp, fontWeight = FontWeight.Bold, modifier = Modifier.padding(bottom = 8.dp))
@@ -199,13 +203,13 @@ fun EditProfileScreen(
                     Column(Modifier.padding(20.dp)) {
                         Text("INFORMACIÓN PERSONAL", fontSize = 11.sp, color = textColor.copy(0.3f), fontWeight = FontWeight.Bold, letterSpacing = 2.sp)
                         Spacer(Modifier.height(14.dp))
-                        OutlinedTextField(value = nombre, onValueChange = { nombre = it }, modifier = Modifier.fillMaxWidth(), label = { Text("Nombre completo") }, singleLine = true, shape = RoundedCornerShape(14.dp), colors = inputColors, leadingIcon = { Text("👤", fontSize = 16.sp) })
+                        OutlinedTextField(value = nombre, onValueChange = { nombre = it }, modifier = Modifier.fillMaxWidth(), label = { Text("Nombre completo") }, singleLine = true, shape = RoundedCornerShape(14.dp), colors = inputColors, leadingIcon = { Icon(Icons.Default.Person, null, tint = BlueAccent.copy(0.6f)) })
                         Spacer(Modifier.height(10.dp))
-                        OutlinedTextField(value = email, onValueChange = { email = it }, modifier = Modifier.fillMaxWidth(), label = { Text("Email") }, singleLine = true, shape = RoundedCornerShape(14.dp), colors = inputColors, leadingIcon = { Text("📧", fontSize = 16.sp) })
+                        OutlinedTextField(value = email, onValueChange = { email = it }, modifier = Modifier.fillMaxWidth(), label = { Text("Email") }, singleLine = true, shape = RoundedCornerShape(14.dp), colors = inputColors, leadingIcon = { Icon(Icons.Default.Email, null, tint = BlueAccent.copy(0.6f)) })
                         Spacer(Modifier.height(10.dp))
-                        OutlinedTextField(value = telefono, onValueChange = { telefono = it }, modifier = Modifier.fillMaxWidth(), label = { Text("Teléfono") }, singleLine = true, shape = RoundedCornerShape(14.dp), colors = inputColors, leadingIcon = { Text("📱", fontSize = 16.sp) })
+                        OutlinedTextField(value = telefono, onValueChange = { telefono = it }, modifier = Modifier.fillMaxWidth(), label = { Text("Teléfono") }, singleLine = true, shape = RoundedCornerShape(14.dp), colors = inputColors, leadingIcon = { Icon(Icons.Default.Phone, null, tint = BlueAccent.copy(0.6f)) })
                         Spacer(Modifier.height(10.dp))
-                        OutlinedTextField(value = password, onValueChange = { password = it }, modifier = Modifier.fillMaxWidth(), label = { Text("Nueva contraseña (opcional)") }, singleLine = true, visualTransformation = PasswordVisualTransformation(), shape = RoundedCornerShape(14.dp), colors = inputColors, leadingIcon = { Text("🔒", fontSize = 16.sp) })
+                        OutlinedTextField(value = password, onValueChange = { password = it }, modifier = Modifier.fillMaxWidth(), label = { Text("Nueva contraseña (opcional)") }, singleLine = true, visualTransformation = PasswordVisualTransformation(), shape = RoundedCornerShape(14.dp), colors = inputColors, leadingIcon = { Icon(Icons.Default.Lock, null, tint = BlueAccent.copy(0.6f)) })
                     }
                 }
 
@@ -229,7 +233,7 @@ fun EditProfileScreen(
                                     }
                                 }
                                 withContext(Dispatchers.Main) {
-                                    Toast.makeText(context, "✅ Perfil actualizado", Toast.LENGTH_SHORT).show()
+                                    Toast.makeText(context, "Perfil actualizado", Toast.LENGTH_SHORT).show()
                                 }
                             } catch (e: Exception) {
                                 withContext(Dispatchers.Main) {
@@ -242,7 +246,7 @@ fun EditProfileScreen(
                     shape = RoundedCornerShape(16.dp), colors = ButtonDefaults.buttonColors(containerColor = Color.Transparent), contentPadding = PaddingValues()
                 ) {
                     Box(Modifier.fillMaxSize().background(Brush.horizontalGradient(listOf(BlueAccent, BlueElectric)), RoundedCornerShape(16.dp)), contentAlignment = Alignment.Center) {
-                        Text("💾 Guardar cambios", fontWeight = FontWeight.Bold, color = Color.White, fontSize = 15.sp)
+                        Text("Guardar cambios", fontWeight = FontWeight.Bold, color = Color.White, fontSize = 15.sp)
                     }
                 }
 
@@ -253,11 +257,11 @@ fun EditProfileScreen(
                     shape = RoundedCornerShape(18.dp),
                     colors = CardDefaults.cardColors(containerColor = Color.Transparent)
                 ) {
-                    val premCardBg = if (isDarkTheme) 
+                    val premCardBg = if (isDarkTheme)
                         if (isPremium) Brush.linearGradient(listOf(Color(0xFF1A2D54), Color(0xFF2A1D54))) else Brush.linearGradient(listOf(Color(0xFF1A2D54), Color(0xFF162347)))
                     else
                         if (isPremium) Brush.linearGradient(listOf(Color(0xFFFFFAEC), Color(0xFFFFF4D6))) else Brush.linearGradient(listOf(Color.White, Color.White))
-                        
+
                     Box(Modifier.fillMaxWidth().background(premCardBg).padding(18.dp)) {
                         Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
                             Box(Modifier.size(44.dp).background(if (isPremium) Color(0xFFFFD700).copy(0.15f) else BlueAccent.copy(0.1f), CircleShape), contentAlignment = Alignment.Center) {
@@ -266,7 +270,7 @@ fun EditProfileScreen(
                             Spacer(Modifier.width(14.dp))
                             Column(Modifier.weight(1f)) {
                                 Text("ESTADO DE CUENTA", fontSize = 11.sp, color = textColor.copy(0.4f), fontWeight = FontWeight.Bold, letterSpacing = 2.sp)
-                                if (isPremium) Text("PREMIUM ⭐", color = Color(0xFFFFD700), fontWeight = FontWeight.Bold, fontSize = 16.sp)
+                                if (isPremium) Text("PREMIUM", color = Color(0xFFFFD700), fontWeight = FontWeight.Bold, fontSize = 16.sp)
                                 else Text("Estándar", fontWeight = FontWeight.SemiBold, color = textColor, fontSize = 16.sp)
                             }
                             if (!isPremium) {
@@ -281,7 +285,7 @@ fun EditProfileScreen(
                 Spacer(Modifier.height(16.dp))
                 HorizontalDivider(Modifier.padding(vertical = 6.dp), 1.dp, textColor.copy(0.06f))
                 OutlinedButton(onClick = { onNavigateToHistorial(idUsuario) }, modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(14.dp), border = androidx.compose.foundation.BorderStroke(1.dp, BlueAccent.copy(0.3f))) {
-                    Text("💳 Ver historial de pagos", color = BlueAccent)
+                    Text("Ver historial de pagos", color = BlueAccent)
                 }
                 Spacer(Modifier.height(20.dp))
             }

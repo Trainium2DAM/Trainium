@@ -84,7 +84,7 @@ fun ProfileScreen(
                             }
                         }.decodeList<com.example.trainium2.models.ReservaConDetalles>()
                 }
-                
+
                 val reservaAfectada = canceladas.find { it.maquina?.operativa == false && it.maquina.mantenimiento_hasta != null }
                 if (reservaAfectada != null) {
                     val desde = reservaAfectada.maquina?.mantenimiento_desde ?: ""
@@ -103,7 +103,7 @@ fun ProfileScreen(
 
     val bgBrush = if (isDarkTheme) Brush.verticalGradient(listOf(BlueDark, BlueMid, BlueDeep))
     else Brush.verticalGradient(listOf(Color(0xFFF0F4FF), Color(0xFFE3ECFF), Color(0xFFD6E4FF)))
-    
+
     val cardBg = if (isDarkTheme) Color(0xFF162347) else Color.White
     val cardIconBg = if (isDarkTheme) BlueAccent.copy(0.12f) else BlueAccent.copy(0.08f)
     val titleColor = if (isDarkTheme) Color.White else Color(0xFF1A1A2E)
@@ -133,7 +133,7 @@ fun ProfileScreen(
             Column(modifier = Modifier.alpha(headerAlpha), horizontalAlignment = Alignment.CenterHorizontally) {
                 val userPhoto = usuarioLocal?.foto
                 val userInitial = (usuarioLocal?.nombre ?: nombre).take(1).uppercase()
-                
+
                 val profileImage = remember(userPhoto) {
                     if (!userPhoto.isNullOrEmpty()) {
                         decodeBase64ToBitmap(userPhoto)?.asImageBitmap()
@@ -155,12 +155,12 @@ fun ProfileScreen(
                 if (isAdmin) {
                     Spacer(Modifier.height(6.dp))
                     Card(shape = RoundedCornerShape(20.dp), colors = CardDefaults.cardColors(containerColor = BlueAccent.copy(0.15f))) {
-                        Text("👑 ADMINISTRADOR", Modifier.padding(horizontal = 16.dp, vertical = 4.dp), fontSize = 12.sp, color = BlueAccent, fontWeight = FontWeight.Bold, letterSpacing = 1.sp)
+                        Text("ADMINISTRADOR", Modifier.padding(horizontal = 16.dp, vertical = 4.dp), fontSize = 12.sp, color = BlueAccent, fontWeight = FontWeight.Bold, letterSpacing = 1.sp)
                     }
                 }
                 if (usuarioLocal?.premium == true || isPremium) {
                     Spacer(Modifier.height(4.dp))
-                    Text("⭐ PREMIUM", fontSize = 13.sp, color = Color(0xFFFFD700), fontWeight = FontWeight.Bold, letterSpacing = 2.sp)
+                    Text("PREMIUM", fontSize = 13.sp, color = Color(0xFFFFD700), fontWeight = FontWeight.Bold, letterSpacing = 2.sp)
                 }
             }
 
@@ -199,7 +199,7 @@ fun ProfileScreen(
                     Text("Entendido", color = Color.White)
                 }
             },
-            title = { Text("⚠️ Aviso de Mantenimiento", fontWeight = FontWeight.Bold) },
+            title = { Text("Aviso de Mantenimiento", fontWeight = FontWeight.Bold) },
             text = { Text(avisoMantenimiento!!, color = titleColor) },
             containerColor = cardBg
         )

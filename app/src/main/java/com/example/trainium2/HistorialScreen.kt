@@ -9,6 +9,9 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Refresh
+import androidx.compose.material.icons.filled.CreditCard
+import androidx.compose.material.icons.filled.Payments
+import androidx.compose.material.icons.filled.Warning
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -80,8 +83,7 @@ fun HistorialScreen(idUsuario: Int, isDarkTheme: Boolean, onBack: () -> Unit) {
 
     Box(Modifier.fillMaxSize().background(bgBrush)) {
         Column(Modifier.fillMaxSize().padding(horizontal = 20.dp)) {
-            Spacer(Modifier.height(40.dp))
-            Row(Modifier.fillMaxWidth().alpha(alphaHeader), verticalAlignment = Alignment.CenterVertically) {
+            Row(Modifier.fillMaxWidth().statusBarsPadding().alpha(alphaHeader), verticalAlignment = Alignment.CenterVertically) {
                 TextButton(onClick = onBack) { Text("← Volver", color = BlueAccent, fontWeight = FontWeight.Bold) }
                 Column(Modifier.weight(1f)) {
                     Text("Pagos", fontSize = 24.sp, fontWeight = FontWeight.Bold, color = textColor)
@@ -95,7 +97,7 @@ fun HistorialScreen(idUsuario: Int, isDarkTheme: Boolean, onBack: () -> Unit) {
                 Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) { CircularProgressIndicator(color = BlueAccent) }
             } else if (errorConexion || pagos.isEmpty()) {
                 Column(Modifier.fillMaxSize(), verticalArrangement = Arrangement.Center, horizontalAlignment = Alignment.CenterHorizontally) {
-                    Text(if (errorConexion) "⚠️ Error de conexión" else "Sin pagos registrados", color = textColor.copy(0.6f))
+                    Text(if (errorConexion) "Error de conexión" else "Sin pagos registrados", color = textColor.copy(0.6f))
                     Spacer(Modifier.height(16.dp))
                     Button(onClick = { cargarDatos() }, colors = ButtonDefaults.buttonColors(containerColor = BlueAccent.copy(0.1f))) {
                         Text("Reintentar", color = BlueAccent)
@@ -115,7 +117,7 @@ fun HistorialScreen(idUsuario: Int, isDarkTheme: Boolean, onBack: () -> Unit) {
                         ) {
                             Row(Modifier.padding(20.dp), verticalAlignment = Alignment.CenterVertically) {
                                 Box(Modifier.size(40.dp).background(BlueAccent.copy(0.1f), CircleShape), contentAlignment = Alignment.Center) {
-                                    Text(if (pago.metodoPago.contains("Tarj", true)) "💳" else "💰")
+                                    Icon(if (pago.metodoPago.contains("Tarj", true)) Icons.Default.CreditCard else Icons.Default.Payments, null, tint = BlueAccent, modifier = Modifier.size(22.dp))
                                 }
                                 Spacer(Modifier.width(16.dp))
                                 Column(Modifier.weight(1f)) {

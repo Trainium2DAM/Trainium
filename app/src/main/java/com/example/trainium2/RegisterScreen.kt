@@ -19,6 +19,14 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Badge
+import androidx.compose.material.icons.filled.Lock
+import androidx.compose.material.icons.filled.Phone
+import androidx.compose.material.icons.filled.Person
+import androidx.compose.material.icons.filled.PersonAdd
+import androidx.compose.material.icons.filled.Email
+import androidx.compose.material3.Icon
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -59,20 +67,17 @@ fun RegisterScreen(isDarkTheme: Boolean, onBack: () -> Unit) {
     val formScale by animateFloatAsState(if (formVisible) 1f else 0.95f, tween(500, easing = FastOutSlowInEasing), label = "fs")
     val btnAlpha by animateFloatAsState(if (btnVisible) 1f else 0f, tween(500), label = "ba")
 
-    val infiniteTransition = rememberInfiniteTransition(label = "glow")
-    val glowAlpha by infiniteTransition.animateFloat(0.15f, 0.35f, infiniteRepeatable(tween(2000), RepeatMode.Reverse), label = "g")
-
     val textColor = if (isDarkTheme) Color.White else BlueDark
     val subtitleColor = if (isDarkTheme) BlueSoft.copy(0.5f) else BlueAccent.copy(0.7f)
     val cardBg = if (isDarkTheme) Color(0xFF162347).copy(0.85f) else Color.White
 
     val inputColors = OutlinedTextFieldDefaults.colors(
-        focusedBorderColor = BlueAccent, 
+        focusedBorderColor = BlueAccent,
         unfocusedBorderColor = if (isDarkTheme) Color.White.copy(0.15f) else BlueDark.copy(0.15f),
-        focusedLabelColor = BlueAccent, 
+        focusedLabelColor = BlueAccent,
         unfocusedLabelColor = if (isDarkTheme) Color.White.copy(0.4f) else BlueDark.copy(0.4f),
-        cursorColor = BlueAccent, 
-        focusedTextColor = textColor, 
+        cursorColor = BlueAccent,
+        focusedTextColor = textColor,
         unfocusedTextColor = textColor.copy(0.9f)
     )
 
@@ -84,14 +89,15 @@ fun RegisterScreen(isDarkTheme: Boolean, onBack: () -> Unit) {
 
     Box(Modifier.fillMaxSize().background(bgBrush)) {
         Column(Modifier.fillMaxSize().padding(24.dp).verticalScroll(rememberScrollState()), horizontalAlignment = Alignment.CenterHorizontally) {
-            TextButton(onClick = onBack, Modifier.align(Alignment.Start)) {
+            TextButton(onClick = onBack, Modifier.align(Alignment.Start).statusBarsPadding()) {
                 Text("← Volver", color = BlueAccent, fontWeight = FontWeight.Bold)
             }
             Spacer(Modifier.height(8.dp))
 
             Box(contentAlignment = Alignment.Center, modifier = Modifier.alpha(iconAlpha).scale(iconScale)) {
-                Box(Modifier.size(90.dp).shadow(24.dp, CircleShape, ambientColor = Color(0xFF00E676).copy(glowAlpha), spotColor = Color(0xFF00E676).copy(glowAlpha)).background(Brush.radialGradient(listOf(Color(0xFF00E676).copy(glowAlpha * 0.5f), Color.Transparent)), CircleShape))
-                Text("✨", fontSize = 48.sp)
+                Box(Modifier.size(80.dp).background(Color(0xFF00E676).copy(0.12f), CircleShape), contentAlignment = Alignment.Center) {
+                    Icon(Icons.Default.PersonAdd, null, tint = Color(0xFF00E676), modifier = Modifier.size(40.dp))
+                }
             }
             Spacer(Modifier.height(10.dp))
 
@@ -108,15 +114,15 @@ fun RegisterScreen(isDarkTheme: Boolean, onBack: () -> Unit) {
                 Column(Modifier.padding(20.dp)) {
                     Text("DATOS PERSONALES", fontSize = 11.sp, color = textColor.copy(0.3f), fontWeight = FontWeight.Bold, letterSpacing = 2.sp)
                     Spacer(Modifier.height(14.dp))
-                    OutlinedTextField(value = nombre, onValueChange = { nombre = it }, modifier = Modifier.fillMaxWidth(), label = { Text("Nombre completo") }, singleLine = true, shape = RoundedCornerShape(14.dp), colors = inputColors, leadingIcon = { Text("👤", fontSize = 16.sp) })
+                    OutlinedTextField(value = nombre, onValueChange = { nombre = it }, modifier = Modifier.fillMaxWidth(), label = { Text("Nombre completo") }, singleLine = true, shape = RoundedCornerShape(14.dp), colors = inputColors, leadingIcon = { Icon(Icons.Default.Person, null, tint = BlueAccent.copy(0.6f)) })
                     Spacer(Modifier.height(10.dp))
-                    OutlinedTextField(value = dni, onValueChange = { dni = it.uppercase() }, modifier = Modifier.fillMaxWidth(), label = { Text("DNI (8 números + 1 letra)") }, singleLine = true, shape = RoundedCornerShape(14.dp), colors = inputColors, leadingIcon = { Text("🪪", fontSize = 16.sp) })
+                    OutlinedTextField(value = dni, onValueChange = { dni = it.uppercase() }, modifier = Modifier.fillMaxWidth(), label = { Text("DNI (8 números + 1 letra)") }, singleLine = true, shape = RoundedCornerShape(14.dp), colors = inputColors, leadingIcon = { Icon(Icons.Default.Badge, null, tint = BlueAccent.copy(0.6f)) })
                     Spacer(Modifier.height(10.dp))
-                    OutlinedTextField(value = email, onValueChange = { email = it }, modifier = Modifier.fillMaxWidth(), label = { Text("Email") }, singleLine = true, shape = RoundedCornerShape(14.dp), colors = inputColors, leadingIcon = { Text("📧", fontSize = 16.sp) })
+                    OutlinedTextField(value = email, onValueChange = { email = it }, modifier = Modifier.fillMaxWidth(), label = { Text("Email") }, singleLine = true, shape = RoundedCornerShape(14.dp), colors = inputColors, leadingIcon = { Icon(Icons.Default.Email, null, tint = BlueAccent.copy(0.6f)) })
                     Spacer(Modifier.height(10.dp))
-                    OutlinedTextField(value = pass, onValueChange = { pass = it }, modifier = Modifier.fillMaxWidth(), label = { Text("Contraseña") }, singleLine = true, visualTransformation = PasswordVisualTransformation(), shape = RoundedCornerShape(14.dp), colors = inputColors, leadingIcon = { Text("🔒", fontSize = 16.sp) })
+                    OutlinedTextField(value = pass, onValueChange = { pass = it }, modifier = Modifier.fillMaxWidth(), label = { Text("Contraseña") }, singleLine = true, visualTransformation = PasswordVisualTransformation(), shape = RoundedCornerShape(14.dp), colors = inputColors, leadingIcon = { Icon(Icons.Default.Lock, null, tint = BlueAccent.copy(0.6f)) })
                     Spacer(Modifier.height(10.dp))
-                    OutlinedTextField(value = telf, onValueChange = { telf = it }, modifier = Modifier.fillMaxWidth(), label = { Text("Teléfono") }, singleLine = true, shape = RoundedCornerShape(14.dp), colors = inputColors, leadingIcon = { Text("📱", fontSize = 16.sp) })
+                    OutlinedTextField(value = telf, onValueChange = { telf = it }, modifier = Modifier.fillMaxWidth(), label = { Text("Teléfono") }, singleLine = true, shape = RoundedCornerShape(14.dp), colors = inputColors, leadingIcon = { Icon(Icons.Default.Phone, null, tint = BlueAccent.copy(0.6f)) })
                 }
             }
 
@@ -138,7 +144,7 @@ fun RegisterScreen(isDarkTheme: Boolean, onBack: () -> Unit) {
                                     .select { filter { eq("dni", dni) } }
                                     .decodeList<Usuario>().isNotEmpty()
                             }
-                            
+
                             if (exists) {
                                 withContext(Dispatchers.Main) { Toast.makeText(context, "El DNI ya está registrado", Toast.LENGTH_SHORT).show() }
                             } else {
@@ -155,9 +161,9 @@ fun RegisterScreen(isDarkTheme: Boolean, onBack: () -> Unit) {
                                 withContext(Dispatchers.IO) {
                                     SupabaseClient.client.from("usuarios").insert(nuevoUsuario)
                                 }
-                                
+
                                 withContext(Dispatchers.Main) {
-                                    Toast.makeText(context, "✅ Registro completado con éxito", Toast.LENGTH_LONG).show()
+                                    Toast.makeText(context, "Registro completado con éxito", Toast.LENGTH_LONG).show()
                                     onBack()
                                 }
                             }
@@ -169,12 +175,16 @@ fun RegisterScreen(isDarkTheme: Boolean, onBack: () -> Unit) {
                     }
                 },
                 modifier = Modifier.fillMaxWidth().height(56.dp).alpha(btnAlpha)
-                    .shadow(14.dp, RoundedCornerShape(16.dp), ambientColor = BlueAccent.copy(0.4f), spotColor = BlueAccent.copy(0.4f)),
+                    .alpha(btnAlpha),
                 shape = RoundedCornerShape(16.dp),
                 colors = ButtonDefaults.buttonColors(containerColor = Color.Transparent), contentPadding = PaddingValues()
             ) {
                 Box(Modifier.fillMaxSize().background(Brush.horizontalGradient(listOf(BlueAccent, BlueElectric)), RoundedCornerShape(16.dp)), contentAlignment = Alignment.Center) {
-                    Text("🎉 Crear cuenta", fontSize = 16.sp, fontWeight = FontWeight.Bold, color = Color.White)
+                    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.Center) {
+                        Icon(Icons.Default.PersonAdd, null, tint = Color.White, modifier = Modifier.size(18.dp))
+                        Spacer(Modifier.width(8.dp))
+                        Text("Crear cuenta", fontSize = 16.sp, fontWeight = FontWeight.Bold, color = Color.White)
+                    }
                 }
             }
 

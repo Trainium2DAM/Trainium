@@ -15,6 +15,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Edit
+import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -59,9 +60,6 @@ fun RegistroScreen(idUsuario: Int, isDarkTheme: Boolean, onBack: () -> Unit) {
 
     var visible by remember { mutableStateOf(false) }
     val alphaAnim by animateFloatAsState(if (visible) 1f else 0f, tween(600), label = "alpha")
-    val infiniteTransition = rememberInfiniteTransition(label = "glow")
-    val glowAlpha by infiniteTransition.animateFloat(0.1f, 0.3f, infiniteRepeatable(tween(2000), RepeatMode.Reverse), label = "glow")
-
     val textColor = if (isDarkTheme) Color.White else BlueDark
     val subtitleColor = if (isDarkTheme) Color.White.copy(0.35f) else BlueDark.copy(0.4f)
     val cardBg = if (isDarkTheme) Color(0xFF162347) else Color.White
@@ -110,7 +108,7 @@ fun RegistroScreen(idUsuario: Int, isDarkTheme: Boolean, onBack: () -> Unit) {
             contentPadding = PaddingValues(top = 20.dp, bottom = 40.dp)
         ) {
             item {
-                Row(Modifier.fillMaxWidth().alpha(alphaAnim), verticalAlignment = Alignment.CenterVertically) {
+                Row(Modifier.fillMaxWidth().statusBarsPadding().alpha(alphaAnim), verticalAlignment = Alignment.CenterVertically) {
                     TextButton(onClick = onBack) { Text("← Volver", color = BlueAccent, fontWeight = FontWeight.Bold) }
                     Column(Modifier.weight(1f)) {
                         Text("Progreso", fontSize = 22.sp, fontWeight = FontWeight.Bold, color = textColor)
@@ -225,7 +223,7 @@ fun RegistroScreen(idUsuario: Int, isDarkTheme: Boolean, onBack: () -> Unit) {
                                                         }
                                                     }
                                                 }
-                                            }) { Text("✓", color = BlueAccent, fontWeight = FontWeight.Bold) }
+                                            }) { Icon(Icons.Default.Check, null, tint = BlueAccent) }
                                         } else {
                                             IconButton(onClick = { editandoId = reg.id; editandoPeso = reg.peso.toString() }) { Icon(Icons.Default.Edit, null, tint = textColor.copy(0.5f), modifier = Modifier.size(18.dp)) }
                                         }
@@ -252,7 +250,7 @@ fun RegistroScreen(idUsuario: Int, isDarkTheme: Boolean, onBack: () -> Unit) {
                         }
                     }
                 }
-                
+
                 if (registros.isNotEmpty()) {
                     item {
                         Spacer(Modifier.height(30.dp))
@@ -287,11 +285,11 @@ fun GraficaPeso(registros: List<PesoUsuario>, isDark: Boolean) {
         val numLines = (rangeY / 2).toInt()
         Triple(startY, rangeY, numLines)
     }
-    
+
     val startY = stats.first
     val rangeY = stats.second
     val numLines = stats.third
-    
+
     val textColor = if (isDark) Color.White.copy(0.6f) else Color.Black.copy(0.6f)
 
     Card(
@@ -302,7 +300,7 @@ fun GraficaPeso(registros: List<PesoUsuario>, isDark: Boolean) {
         Row(Modifier.padding(16.dp).fillMaxSize()) {
             // Eje Y: Leyendas de peso (cada 2kg)
             Column(
-                modifier = Modifier.fillMaxHeight().padding(end = 12.dp, bottom = 24.dp), 
+                modifier = Modifier.fillMaxHeight().padding(end = 12.dp, bottom = 24.dp),
                 verticalArrangement = Arrangement.SpaceBetween,
                 horizontalAlignment = Alignment.End
             ) {
@@ -318,7 +316,7 @@ fun GraficaPeso(registros: List<PesoUsuario>, isDark: Boolean) {
                         val width = size.width
                         val height = size.height
                         val spaceX = width / (data.size - 1)
-                        
+
                         val points = data.mapIndexed { index, reg ->
                             val x = index * spaceX
                             val y = height - ((reg.peso.toFloat() - startY) / rangeY * height)
@@ -345,7 +343,7 @@ fun GraficaPeso(registros: List<PesoUsuario>, isDark: Boolean) {
                         }
                     }
                 }
-                
+
                 // Eje X: Contador de registros (1, 2, 3...)
                 Box(Modifier.fillMaxWidth().height(24.dp)) {
                     val count = data.size

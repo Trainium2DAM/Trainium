@@ -46,11 +46,11 @@ fun ReservasScreen(isAdmin: Boolean, idUsuario: Int, isDarkTheme: Boolean, onBac
     var todasLasReservas by remember { mutableStateOf(listOf<ReservaConDetalles>()) }
     var cargando by remember { mutableStateOf(true) }
     var errorConexion by remember { mutableStateOf(false) }
-    
+
     // Estados del filtro: "Próximas", "Hoy", "Todas", "Fecha"
     var filtroSeleccionado by remember { mutableStateOf("Próximas") }
     var fechaFiltroManual by remember { mutableStateOf("") }
-    
+
     val hoyStr = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()).format(Date())
     val calendar = Calendar.getInstance()
 
@@ -63,7 +63,7 @@ fun ReservasScreen(isAdmin: Boolean, idUsuario: Int, isDarkTheme: Boolean, onBac
     val textColor = if (isDarkTheme) Color.White else BlueDark
     val subtitleColor = if (isDarkTheme) Color.White.copy(0.35f) else BlueDark.copy(0.4f)
     val cardBg = if (isDarkTheme) Color(0xFF162347) else Color.White
-    
+
     val bgBrush = if (isDarkTheme) Brush.verticalGradient(listOf(BlueDark, BlueMid, BlueDeep))
     else Brush.verticalGradient(listOf(Color(0xFFF0F4FF), Color(0xFFE3ECFF), Color(0xFFD6E4FF)))
 
@@ -91,7 +91,7 @@ fun ReservasScreen(isAdmin: Boolean, idUsuario: Int, isDarkTheme: Boolean, onBac
             }
         }
     }
-    
+
     LaunchedEffect(Unit) { cargarDatos() }
 
     // Selector de Fecha
@@ -114,7 +114,7 @@ fun ReservasScreen(isAdmin: Boolean, idUsuario: Int, isDarkTheme: Boolean, onBac
     Box(Modifier.fillMaxSize().background(bgBrush)) {
         Column(Modifier.fillMaxSize().padding(20.dp)) {
             // --- HEADER ---
-            Row(Modifier.fillMaxWidth().alpha(headerAlpha), verticalAlignment = Alignment.CenterVertically) {
+            Row(Modifier.fillMaxWidth().statusBarsPadding().alpha(headerAlpha), verticalAlignment = Alignment.CenterVertically) {
                 TextButton(onClick = onBack) { Text("← Volver", color = BlueAccent, fontWeight = FontWeight.Bold) }
                 Column(Modifier.weight(1f)) {
                     Text("Mis Reservas", fontSize = 22.sp, fontWeight = FontWeight.Bold, color = textColor)
@@ -142,7 +142,7 @@ fun ReservasScreen(isAdmin: Boolean, idUsuario: Int, isDarkTheme: Boolean, onBac
                         border = FilterChipDefaults.filterChipBorder(borderColor = BlueAccent.copy(0.2f), enabled = true, selected = sel)
                     )
                 }
-                
+
                 IconButton(
                     onClick = { datePickerDialog.show() },
                     modifier = Modifier.size(32.dp).background(if(filtroSeleccionado == "Fecha") BlueAccent else Color.Transparent, CircleShape)
@@ -162,7 +162,7 @@ fun ReservasScreen(isAdmin: Boolean, idUsuario: Int, isDarkTheme: Boolean, onBac
                 Box(Modifier.fillMaxWidth().weight(1f), contentAlignment = Alignment.Center) { CircularProgressIndicator(color = BlueAccent) }
             } else if (errorConexion) {
                 Box(Modifier.fillMaxWidth().weight(1f), contentAlignment = Alignment.Center) {
-                    Text("⚠️ Error de conexión", color = textColor)
+                    Text("Error de conexión", color = textColor)
                 }
             } else if (reservasFiltradas.isEmpty()) {
                 Box(Modifier.fillMaxWidth().weight(1f), contentAlignment = Alignment.Center) {
@@ -194,12 +194,12 @@ fun ReservasScreen(isAdmin: Boolean, idUsuario: Int, isDarkTheme: Boolean, onBac
                                 Column(Modifier.weight(1f)) {
                                     Text(r.maquina?.nombre ?: "Equipo", fontWeight = FontWeight.Bold, color = textColor, fontSize = 15.sp)
                                     Text(
-                                        text = if (esHoy) "HOY: ${r.horaInicio.take(5)} - ${r.horaFin.take(5)}" 
-                                               else "${r.fecha} | ${r.horaInicio.take(5)} - ${r.horaFin.take(5)}",
+                                        text = if (esHoy) "HOY: ${r.horaInicio.take(5)} - ${r.horaFin.take(5)}"
+                                        else "${r.fecha} | ${r.horaInicio.take(5)} - ${r.horaFin.take(5)}",
                                         fontSize = 12.sp, color = if (esHoy) BlueAccent else subtitleColor,
                                         fontWeight = if (esHoy) FontWeight.Black else FontWeight.Normal
                                     )
-                                    if (isAdmin) Text("👤 ${r.usuario?.nombre ?: "User"}", fontSize = 11.sp, color = textColor.copy(0.5f))
+                                    if (isAdmin) Text("${r.usuario?.nombre ?: "Usuario"}", fontSize = 11.sp, color = textColor.copy(0.5f))
                                 }
                                 IconButton(onClick = {
                                     scope.launch {

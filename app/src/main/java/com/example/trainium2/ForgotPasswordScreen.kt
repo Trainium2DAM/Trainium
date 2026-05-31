@@ -6,17 +6,23 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.ui.draw.shadow
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.scale
-import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Badge
+import androidx.compose.material.icons.filled.Lock
+import androidx.compose.material.icons.filled.Email
+import androidx.compose.material.icons.filled.LockOpen
+import androidx.compose.material3.Icon
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -47,9 +53,6 @@ fun ForgotPasswordScreen(isDarkTheme: Boolean, onBack: () -> Unit) {
     val iconScale by animateFloatAsState(if (iconVisible) 1f else 0.7f, tween(600, easing = FastOutSlowInEasing), label = "is")
     val formAlpha by animateFloatAsState(if (formVisible) 1f else 0f, tween(500), label = "f")
 
-    val infiniteTransition = rememberInfiniteTransition(label = "g")
-    val glowAlpha by infiniteTransition.animateFloat(0.1f, 0.3f, infiniteRepeatable(tween(2000), RepeatMode.Reverse), label = "ga")
-
     LaunchedEffect(Unit) { delay(80); headerVisible = true; delay(150); iconVisible = true; delay(150); formVisible = true }
 
     val textColor = if (isDarkTheme) Color.White else BlueDark
@@ -57,12 +60,12 @@ fun ForgotPasswordScreen(isDarkTheme: Boolean, onBack: () -> Unit) {
     val cardBg = if (isDarkTheme) Color(0xFF162347) else Color.White
 
     val inputColors = OutlinedTextFieldDefaults.colors(
-        focusedBorderColor = BlueAccent, 
+        focusedBorderColor = BlueAccent,
         unfocusedBorderColor = if (isDarkTheme) Color.White.copy(0.15f) else BlueDark.copy(0.15f),
-        focusedLabelColor = BlueAccent, 
+        focusedLabelColor = BlueAccent,
         unfocusedLabelColor = if (isDarkTheme) Color.White.copy(0.4f) else BlueDark.copy(0.4f),
-        cursorColor = BlueAccent, 
-        focusedTextColor = textColor, 
+        cursorColor = BlueAccent,
+        focusedTextColor = textColor,
         unfocusedTextColor = textColor.copy(0.9f)
     )
 
@@ -75,7 +78,7 @@ fun ForgotPasswordScreen(isDarkTheme: Boolean, onBack: () -> Unit) {
     Box(Modifier.fillMaxSize().background(bgBrush)) {
         Column(Modifier.fillMaxSize().padding(20.dp)) {
             // ── Header ──
-            Row(Modifier.fillMaxWidth().alpha(headerAlpha), verticalAlignment = Alignment.CenterVertically) {
+            Row(Modifier.fillMaxWidth().statusBarsPadding().alpha(headerAlpha), verticalAlignment = Alignment.CenterVertically) {
                 TextButton(onClick = onBack) { Text("← Volver", color = BlueAccent, fontWeight = FontWeight.Bold) }
                 Column(Modifier.weight(1f)) {
                     Text("Recuperar Contraseña", fontSize = 22.sp, fontWeight = FontWeight.Bold, color = textColor)
@@ -86,8 +89,9 @@ fun ForgotPasswordScreen(isDarkTheme: Boolean, onBack: () -> Unit) {
 
             // ── Lock Icon ──
             Box(Modifier.fillMaxWidth().alpha(iconAlpha).scale(iconScale), contentAlignment = Alignment.Center) {
-                Box(Modifier.size(100.dp).shadow(20.dp, CircleShape, ambientColor = BlueAccent.copy(glowAlpha), spotColor = BlueAccent.copy(glowAlpha)).background(Brush.radialGradient(listOf(BlueAccent.copy(glowAlpha), Color.Transparent)), CircleShape))
-                Text(if (step == 1) "🔐" else "🔑", fontSize = 56.sp)
+                Box(Modifier.size(80.dp).background(BlueAccent.copy(0.1f), androidx.compose.foundation.shape.CircleShape), contentAlignment = Alignment.Center) {
+                    Icon(if (step == 1) Icons.Default.Lock else Icons.Default.LockOpen, null, tint = BlueAccent, modifier = Modifier.size(40.dp))
+                }
             }
             Spacer(Modifier.height(30.dp))
 
@@ -102,15 +106,15 @@ fun ForgotPasswordScreen(isDarkTheme: Boolean, onBack: () -> Unit) {
                     if (step == 1) {
                         Text("VERIFICA TU IDENTIDAD", fontSize = 11.sp, color = textColor.copy(0.3f), fontWeight = FontWeight.Bold, letterSpacing = 2.sp)
                         Spacer(Modifier.height(14.dp))
-                        OutlinedTextField(value = dni, onValueChange = { dni = it }, modifier = Modifier.fillMaxWidth(), label = { Text("DNI") }, singleLine = true, shape = RoundedCornerShape(14.dp), colors = inputColors, leadingIcon = { Text("🪪", fontSize = 16.sp) })
+                        OutlinedTextField(value = dni, onValueChange = { dni = it }, modifier = Modifier.fillMaxWidth(), label = { Text("DNI") }, singleLine = true, shape = RoundedCornerShape(14.dp), colors = inputColors, leadingIcon = { Icon(Icons.Default.Badge, null, tint = BlueAccent.copy(0.6f)) })
                         Spacer(Modifier.height(10.dp))
-                        OutlinedTextField(value = email, onValueChange = { email = it }, modifier = Modifier.fillMaxWidth(), label = { Text("Email") }, singleLine = true, shape = RoundedCornerShape(14.dp), colors = inputColors, leadingIcon = { Text("📧", fontSize = 16.sp) })
+                        OutlinedTextField(value = email, onValueChange = { email = it }, modifier = Modifier.fillMaxWidth(), label = { Text("Email") }, singleLine = true, shape = RoundedCornerShape(14.dp), colors = inputColors, leadingIcon = { Icon(Icons.Default.Email, null, tint = BlueAccent.copy(0.6f)) })
                     } else {
                         Text("NUEVA CONTRASEÑA", fontSize = 11.sp, color = textColor.copy(0.3f), fontWeight = FontWeight.Bold, letterSpacing = 2.sp)
                         Spacer(Modifier.height(14.dp))
-                        OutlinedTextField(value = newPass, onValueChange = { newPass = it }, modifier = Modifier.fillMaxWidth(), label = { Text("Nueva contraseña") }, singleLine = true, visualTransformation = PasswordVisualTransformation(), shape = RoundedCornerShape(14.dp), colors = inputColors, leadingIcon = { Text("🔒", fontSize = 16.sp) })
+                        OutlinedTextField(value = newPass, onValueChange = { newPass = it }, modifier = Modifier.fillMaxWidth(), label = { Text("Nueva contraseña") }, singleLine = true, visualTransformation = PasswordVisualTransformation(), shape = RoundedCornerShape(14.dp), colors = inputColors, leadingIcon = { Icon(Icons.Default.Lock, null, tint = BlueAccent.copy(0.6f)) })
                         Spacer(Modifier.height(10.dp))
-                        OutlinedTextField(value = confirmPass, onValueChange = { confirmPass = it }, modifier = Modifier.fillMaxWidth(), label = { Text("Confirmar contraseña") }, singleLine = true, visualTransformation = PasswordVisualTransformation(), shape = RoundedCornerShape(14.dp), colors = inputColors, leadingIcon = { Text("🔒", fontSize = 16.sp) })
+                        OutlinedTextField(value = confirmPass, onValueChange = { confirmPass = it }, modifier = Modifier.fillMaxWidth(), label = { Text("Confirmar contraseña") }, singleLine = true, visualTransformation = PasswordVisualTransformation(), shape = RoundedCornerShape(14.dp), colors = inputColors, leadingIcon = { Icon(Icons.Default.Lock, null, tint = BlueAccent.copy(0.6f)) })
                     }
                 }
             }
@@ -133,7 +137,7 @@ fun ForgotPasswordScreen(isDarkTheme: Boolean, onBack: () -> Unit) {
                                         }
                                         .decodeSingleOrNull<Usuario>()
                                 }
-                                
+
                                 withContext(Dispatchers.Main) {
                                     if (user != null) {
                                         idUsuario = user.id
@@ -143,15 +147,15 @@ fun ForgotPasswordScreen(isDarkTheme: Boolean, onBack: () -> Unit) {
                                     }
                                 }
                             } else {
-                                if (newPass != confirmPass) { 
+                                if (newPass != confirmPass) {
                                     Toast.makeText(context, "Las contraseñas no coinciden", Toast.LENGTH_SHORT).show()
-                                    return@launch 
+                                    return@launch
                                 }
-                                if (newPass.length < 4) { 
+                                if (newPass.length < 4) {
                                     Toast.makeText(context, "Mínimo 4 caracteres", Toast.LENGTH_SHORT).show()
-                                    return@launch 
+                                    return@launch
                                 }
-                                
+
                                 withContext(Dispatchers.IO) {
                                     SupabaseClient.client.from("usuarios").update({
                                         set("contraseniaHash", newPass)
@@ -161,9 +165,9 @@ fun ForgotPasswordScreen(isDarkTheme: Boolean, onBack: () -> Unit) {
                                         }
                                     }
                                 }
-                                
+
                                 withContext(Dispatchers.Main) {
-                                    Toast.makeText(context, "✅ Contraseña actualizada", Toast.LENGTH_LONG).show()
+                                    Toast.makeText(context, "Contraseña actualizada", Toast.LENGTH_LONG).show()
                                     onBack()
                                 }
                             }
@@ -174,12 +178,15 @@ fun ForgotPasswordScreen(isDarkTheme: Boolean, onBack: () -> Unit) {
                         }
                     }
                 },
-                modifier = Modifier.fillMaxWidth().height(54.dp).alpha(formAlpha)
-                    .shadow(12.dp, RoundedCornerShape(16.dp), ambientColor = BlueAccent.copy(0.3f), spotColor = BlueAccent.copy(0.3f)),
+                modifier = Modifier.fillMaxWidth().height(54.dp).alpha(formAlpha),
                 shape = RoundedCornerShape(16.dp), colors = ButtonDefaults.buttonColors(containerColor = Color.Transparent), contentPadding = PaddingValues()
             ) {
                 Box(Modifier.fillMaxSize().background(Brush.horizontalGradient(listOf(BlueAccent, BlueElectric)), RoundedCornerShape(16.dp)), contentAlignment = Alignment.Center) {
-                    Text(if (step == 1) "Verificar identidad" else "Cambiar contraseña", fontWeight = FontWeight.Bold, color = Color.White, fontSize = 15.sp)
+                    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.Center) {
+                        Icon(if (step == 1) Icons.Default.Badge else Icons.Default.LockOpen, null, tint = Color.White, modifier = Modifier.size(18.dp))
+                        Spacer(Modifier.width(8.dp))
+                        Text(if (step == 1) "Verificar identidad" else "Cambiar contraseña", fontWeight = FontWeight.Bold, color = Color.White, fontSize = 15.sp)
+                    }
                 }
             }
 

@@ -5,7 +5,6 @@ import androidx.compose.animation.core.*
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -20,6 +19,13 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Badge
+import androidx.compose.material.icons.filled.Lock
+import androidx.compose.material.icons.filled.Login
+import androidx.compose.material.icons.filled.Key
+import androidx.compose.material.icons.filled.PersonAdd
+import androidx.compose.material3.Icon
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -67,20 +73,17 @@ fun LoginScreen(
     val btnScale by animateFloatAsState(if (btnVisible) 1f else 0.85f, tween(500, easing = FastOutSlowInEasing), label = "bs")
     val linksAlpha by animateFloatAsState(if (linksVisible) 1f else 0f, tween(400), label = "lka")
 
-    val infiniteTransition = rememberInfiniteTransition(label = "glow")
-    val glowAlpha by infiniteTransition.animateFloat(0.15f, 0.4f, infiniteRepeatable(tween(2500), RepeatMode.Reverse), label = "g")
-
     val textColor = if (isDarkTheme) Color.White else BlueDark
     val subtitleColor = if (isDarkTheme) BlueSoft.copy(0.5f) else BlueAccent.copy(0.7f)
     val cardBg = if (isDarkTheme) Color(0xFF162347).copy(0.85f) else Color.White.copy(0.9f)
-    
+
     val inputColors = OutlinedTextFieldDefaults.colors(
-        focusedBorderColor = BlueAccent, 
+        focusedBorderColor = BlueAccent,
         unfocusedBorderColor = if (isDarkTheme) Color.White.copy(0.15f) else BlueDark.copy(0.15f),
-        focusedLabelColor = BlueAccent, 
+        focusedLabelColor = BlueAccent,
         unfocusedLabelColor = if (isDarkTheme) Color.White.copy(0.4f) else BlueDark.copy(0.4f),
-        cursorColor = BlueAccent, 
-        focusedTextColor = textColor, 
+        cursorColor = BlueAccent,
+        focusedTextColor = textColor,
         unfocusedTextColor = textColor.copy(0.9f)
     )
 
@@ -99,7 +102,6 @@ fun LoginScreen(
             verticalArrangement = Arrangement.Center
         ) {
             Box(contentAlignment = Alignment.Center, modifier = Modifier.alpha(logoAlpha).scale(logoScale)) {
-                Box(Modifier.size(140.dp).shadow(30.dp, CircleShape, ambientColor = BlueAccent.copy(glowAlpha), spotColor = BlueAccent.copy(glowAlpha)).background(Brush.radialGradient(listOf(BlueAccent.copy(glowAlpha * 0.5f), Color.Transparent)), CircleShape))
                 Image(
                     painter = painterResource(if (isDarkTheme) R.drawable.blanco else R.drawable.negro),
                     contentDescription = "Logo Trainium",
@@ -127,7 +129,7 @@ fun LoginScreen(
                         value = dni, onValueChange = { dni = it.uppercase() },
                         label = { Text("DNI") }, modifier = Modifier.fillMaxWidth(), singleLine = true,
                         shape = RoundedCornerShape(14.dp), colors = inputColors,
-                        leadingIcon = { Text("🪪", fontSize = 16.sp) }
+                        leadingIcon = { Icon(Icons.Default.Badge, null, tint = BlueAccent.copy(0.6f)) }
                     )
                     Spacer(Modifier.height(12.dp))
                     OutlinedTextField(
@@ -135,7 +137,7 @@ fun LoginScreen(
                         label = { Text("Contraseña") }, visualTransformation = PasswordVisualTransformation(),
                         modifier = Modifier.fillMaxWidth(), singleLine = true,
                         shape = RoundedCornerShape(14.dp), colors = inputColors,
-                        leadingIcon = { Text("🔒", fontSize = 16.sp) }
+                        leadingIcon = { Icon(Icons.Default.Lock, null, tint = BlueAccent.copy(0.6f)) }
                     )
                 }
             }
@@ -154,7 +156,7 @@ fun LoginScreen(
                                         }
                                     }.decodeSingleOrNull<Usuario>()
                             }
-                            
+
                             withContext(Dispatchers.Main) {
                                 if (user != null) {
                                     if (user.contraseniaHash == pass) {
@@ -178,14 +180,17 @@ fun LoginScreen(
                         }
                     }
                 },
-                modifier = Modifier.fillMaxWidth().height(56.dp).scale(btnScale).alpha(btnAlpha)
-                    .shadow(16.dp, RoundedCornerShape(16.dp), ambientColor = BlueAccent.copy(0.4f), spotColor = BlueAccent.copy(0.4f)),
+                modifier = Modifier.fillMaxWidth().height(56.dp).scale(btnScale).alpha(btnAlpha),
                 shape = RoundedCornerShape(16.dp),
                 colors = ButtonDefaults.buttonColors(containerColor = Color.Transparent),
                 contentPadding = PaddingValues()
             ) {
                 Box(Modifier.fillMaxSize().background(Brush.horizontalGradient(listOf(BlueAccent, BlueElectric)), RoundedCornerShape(16.dp)), contentAlignment = Alignment.Center) {
-                    Text("🚀 ENTRAR", fontSize = 16.sp, fontWeight = FontWeight.Bold, color = Color.White, letterSpacing = 2.sp)
+                    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.Center) {
+                        Icon(Icons.Default.Login, null, tint = Color.White, modifier = Modifier.size(18.dp))
+                        Spacer(Modifier.width(8.dp))
+                        Text("ENTRAR", fontSize = 16.sp, fontWeight = FontWeight.Bold, color = Color.White, letterSpacing = 2.sp)
+                    }
                 }
             }
 
@@ -193,7 +198,7 @@ fun LoginScreen(
 
             Column(Modifier.alpha(linksAlpha), horizontalAlignment = Alignment.CenterHorizontally) {
                 TextButton(onClick = onNavigateToForgot) {
-                    Text("🔑 ¿Olvidaste tu contraseña?", color = textColor.copy(0.5f), fontSize = 13.sp)
+                    Text("¿Olvidaste tu contraseña?", color = textColor.copy(0.5f), fontSize = 13.sp)
                 }
                 Spacer(Modifier.height(4.dp))
                 OutlinedButton(
@@ -201,7 +206,7 @@ fun LoginScreen(
                     shape = RoundedCornerShape(14.dp),
                     border = androidx.compose.foundation.BorderStroke(1.dp, BlueAccent.copy(0.3f))
                 ) {
-                    Text("✨ CREAR CUENTA NUEVA", color = BlueAccent, fontWeight = FontWeight.SemiBold, fontSize = 14.sp)
+                    Text("CREAR CUENTA NUEVA", color = BlueAccent, fontWeight = FontWeight.SemiBold, fontSize = 14.sp)
                 }
                 Spacer(Modifier.height(8.dp))
                 TextButton(onClick = onBack) { Text("← INICIO", fontWeight = FontWeight.Bold, color = textColor.copy(0.3f)) }

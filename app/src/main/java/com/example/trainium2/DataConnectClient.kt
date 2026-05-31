@@ -46,15 +46,15 @@ object DataConnectClient {
             val responseCode = conn.responseCode
             if (responseCode !in 200..299) {
                 val errorMsg = conn.errorStream?.bufferedReader()?.use { it.readText() } ?: "Sin detalle"
-                Log.e("DataConnect", "❌ ERROR $responseCode: $errorMsg")
+                Log.e("DataConnect", "ERROR $responseCode: $errorMsg")
                 return@withContext null
             }
 
             val responseText = conn.inputStream.bufferedReader().use { it.readText() }
-            Log.d("DataConnect", "✅ EXITO: $responseText")
+            Log.d("DataConnect", "EXITO: $responseText")
             return@withContext JSONObject(responseText)
         } catch (e: Exception) {
-            Log.e("DataConnect", "🚨 FALLO DE RED: ${e.message}", e)
+            Log.e("DataConnect", "FALLO DE RED: ${e.message}", e)
             null
         }
     }
