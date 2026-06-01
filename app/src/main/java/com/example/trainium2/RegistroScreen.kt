@@ -174,7 +174,11 @@ fun RegistroScreen(idUsuario: Int, isDarkTheme: Boolean, onToggleTheme: () -> Un
 
             if (cargando) {
                 item {
-                    Box(Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) { CircularProgressIndicator(color = BlueAccent) }
+                    Column(Modifier.fillMaxWidth().padding(top = 20.dp)) {
+                        SkeletonCard(modifier = Modifier.fillMaxWidth(), height = 60)
+                        Spacer(Modifier.height(12.dp))
+                        SkeletonCard(modifier = Modifier.fillMaxWidth(), height = 180)
+                    }
                 }
             } else {
                 item {

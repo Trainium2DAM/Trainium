@@ -167,7 +167,13 @@ fun ReservasScreen(isAdmin: Boolean, idUsuario: Int, isDarkTheme: Boolean, onTog
 
             // --- LISTA DE RESERVAS ---
             if (cargando) {
-                Box(Modifier.fillMaxWidth().weight(1f), contentAlignment = Alignment.Center) { CircularProgressIndicator(color = BlueAccent) }
+                Column(Modifier.fillMaxWidth().weight(1f).padding(top = 12.dp)) {
+                    SkeletonCard(modifier = Modifier.fillMaxWidth(), height = 80)
+                    Spacer(Modifier.height(10.dp))
+                    SkeletonCard(modifier = Modifier.fillMaxWidth(), height = 80)
+                    Spacer(Modifier.height(10.dp))
+                    SkeletonCard(modifier = Modifier.fillMaxWidth(), height = 80)
+                }
             } else if (errorConexion) {
                 Box(Modifier.fillMaxWidth().weight(1f), contentAlignment = Alignment.Center) {
                     Text("Error de conexión", color = textColor)

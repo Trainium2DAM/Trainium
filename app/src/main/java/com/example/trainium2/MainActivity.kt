@@ -14,6 +14,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.core.view.WindowCompat
+import androidx.core.view.WindowInsetsCompat
+import androidx.core.view.WindowInsetsControllerCompat
 import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
@@ -31,6 +33,8 @@ class MainActivity : ComponentActivity() {
         setContent {
             val context = LocalContext.current
             SecureSessionManager.setContext(context)
+            val window = (context as? android.app.Activity)?.window
+
             val themeManager = remember { ThemeManager(context) }
             val savedDarkMode by themeManager.isDarkMode.collectAsState(initial = null)
             val scope = rememberCoroutineScope()
@@ -51,6 +55,28 @@ class MainActivity : ComponentActivity() {
                 val navController = rememberNavController()
                 val navBackStackEntry by navController.currentBackStackEntryAsState()
                 val currentRoute = navBackStackEntry?.destination?.route
+
+                SideEffect {
+                    window?.let { w ->
+                        val controller = WindowInsetsControllerCompat(w, w.decorView)
+                        controller.systemBarsBehavior = WindowInsetsControllerCompat.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE
+                        val isSplash = currentRoute == "splash"
+                        if (isSplash) {
+                            controller.show(WindowInsetsCompat.Type.navigationBars())
+                            w.statusBarColor = android.graphics.Color.WHITE
+                            w.navigationBarColor = android.graphics.Color.WHITE
+                            controller.isAppearanceLightStatusBars = true
+                            controller.isAppearanceLightNavigationBars = true
+                        } else {
+                            controller.hide(WindowInsetsCompat.Type.navigationBars())
+                            val color = if (isDarkTheme) android.graphics.Color.parseColor("#0B1426") else android.graphics.Color.parseColor("#F0F4FF")
+                            w.statusBarColor = color
+                            w.navigationBarColor = color
+                            controller.isAppearanceLightStatusBars = !isDarkTheme
+                            controller.isAppearanceLightNavigationBars = !isDarkTheme
+                        }
+                    }
+                }
                 
                 // Forzamos fondo blanco en la superficie si estamos en el splash
                 val backgroundColor = if (currentRoute == "splash") Color.White else MaterialTheme.colorScheme.background

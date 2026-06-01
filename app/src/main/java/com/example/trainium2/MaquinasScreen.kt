@@ -227,7 +227,13 @@ fun MaquinasScreen(isAdmin: Boolean, idUsuario: Int, isDarkTheme: Boolean, onTog
                 Spacer(Modifier.height(12.dp))
 
                 if (cargando) {
-                    Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) { CircularProgressIndicator(color = BlueAccent) }
+                    Column(Modifier.fillMaxSize().padding(20.dp)) {
+                        SkeletonCard(modifier = Modifier.fillMaxWidth(), height = 100)
+                        Spacer(Modifier.height(16.dp))
+                        SkeletonCard(modifier = Modifier.fillMaxWidth(), height = 100)
+                        Spacer(Modifier.height(16.dp))
+                        SkeletonCard(modifier = Modifier.fillMaxWidth(), height = 100)
+                    }
                 } else {
                     LazyColumn(verticalArrangement = Arrangement.spacedBy(12.dp)) {
                         itemsIndexed(listaMaquinas) { index, maquina ->

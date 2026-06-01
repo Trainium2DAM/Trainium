@@ -179,7 +179,11 @@ fun EditProfileScreen(
             )
 
             if (cargando) {
-                Box(Modifier.fillMaxWidth().height(300.dp), contentAlignment = Alignment.Center) { CircularProgressIndicator(color = BlueAccent) }
+                Column(Modifier.fillMaxWidth().padding(top = 20.dp)) {
+                    SkeletonCircle(modifier = Modifier.align(Alignment.CenterHorizontally), size = 100)
+                    Spacer(Modifier.height(24.dp))
+                    SkeletonCard(modifier = Modifier.fillMaxWidth(), height = 250)
+                }
             } else {
                 Spacer(Modifier.height(20.dp))
 

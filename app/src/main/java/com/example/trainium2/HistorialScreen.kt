@@ -101,7 +101,15 @@ fun HistorialScreen(idUsuario: Int, isDarkTheme: Boolean, onToggleTheme: () -> U
             Spacer(Modifier.height(30.dp))
 
             if (cargando) {
-                Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) { CircularProgressIndicator(color = BlueAccent) }
+                Column(Modifier.fillMaxSize().padding(20.dp)) {
+                    SkeletonCard(modifier = Modifier.fillMaxWidth(), height = 70)
+                    Spacer(Modifier.height(12.dp))
+                    SkeletonCard(modifier = Modifier.fillMaxWidth(), height = 70)
+                    Spacer(Modifier.height(12.dp))
+                    SkeletonCard(modifier = Modifier.fillMaxWidth(), height = 70)
+                    Spacer(Modifier.height(12.dp))
+                    SkeletonCard(modifier = Modifier.fillMaxWidth(), height = 70)
+                }
             } else if (errorConexion || pagos.isEmpty()) {
                 Column(Modifier.fillMaxSize(), verticalArrangement = Arrangement.Center, horizontalAlignment = Alignment.CenterHorizontally) {
                     Text(if (errorConexion) "Error de conexión" else "Sin pagos registrados", color = textColor.copy(0.6f))

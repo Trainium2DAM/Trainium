@@ -237,8 +237,10 @@ fun PlatosScreen(isAdmin: Boolean, idUsuario: Int, isDarkTheme: Boolean, onToggl
             Spacer(Modifier.height(20.dp))
 
             if (cargando) {
-                Box(Modifier.fillMaxWidth().height(300.dp), contentAlignment = Alignment.Center) {
-                    CircularProgressIndicator(color = BlueAccent)
+                Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.fillMaxWidth()) {
+                    SkeletonCircle(size = 130)
+                    Spacer(Modifier.height(24.dp))
+                    SkeletonCard(modifier = Modifier.fillMaxWidth(), height = 200)
                 }
             } else if (errorMsg.isNotEmpty()) {
                 Column(Modifier.fillMaxWidth(), horizontalAlignment = Alignment.CenterHorizontally) {
