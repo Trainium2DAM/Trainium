@@ -27,6 +27,8 @@ import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.PersonAdd
 import androidx.compose.material.icons.filled.Email
 import androidx.compose.material3.Icon
+import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -38,13 +40,73 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
+private val PREFIJOS_PAIS = listOf(
+    "+34" to "🇪🇸 España",
+    "+1"  to "🇺🇸 EE.UU. / Canadá",
+    "+44" to "🇬🇧 Reino Unido",
+    "+33" to "🇫🇷 Francia",
+    "+49" to "🇩🇪 Alemania",
+    "+39" to "🇮🇹 Italia",
+    "+351" to "🇵🇹 Portugal",
+    "+52" to "🇲🇽 México",
+    "+54" to "🇦🇷 Argentina",
+    "+57" to "🇨🇴 Colombia",
+    "+56" to "🇨🇱 Chile",
+    "+51" to "🇵🇪 Perú",
+    "+58" to "🇻🇪 Venezuela",
+    "+55" to "🇧🇷 Brasil",
+    "+593" to "🇪🇨 Ecuador",
+    "+591" to "🇧🇴 Bolivia",
+    "+598" to "🇺🇾 Uruguay",
+    "+595" to "🇵🇾 Paraguay",
+    "+503" to "🇸🇻 El Salvador",
+    "+502" to "🇬🇹 Guatemala",
+    "+504" to "🇭🇳 Honduras",
+    "+505" to "🇳🇮 Nicaragua",
+    "+506" to "🇨🇷 Costa Rica",
+    "+507" to "🇵🇦 Panamá",
+    "+53" to "🇨🇺 Cuba",
+    "+1809" to "🇩🇴 Rep. Dominicana",
+    "+212" to "🇲🇦 Marruecos",
+    "+213" to "🇩🇿 Argelia",
+    "+216" to "🇹🇳 Túnez",
+    "+20" to "🇪🇬 Egipto",
+    "+234" to "🇳🇬 Nigeria",
+    "+27" to "🇿🇦 Sudáfrica",
+    "+86" to "🇨🇳 China",
+    "+91" to "🇮🇳 India",
+    "+81" to "🇯🇵 Japón",
+    "+82" to "🇰🇷 Corea del Sur",
+    "+7" to "🇷🇺 Rusia",
+    "+380" to "🇺🇦 Ucrania",
+    "+48" to "🇵🇱 Polonia",
+    "+31" to "🇳🇱 Países Bajos",
+    "+32" to "🇧🇪 Bélgica",
+    "+41" to "🇨🇭 Suiza",
+    "+43" to "🇦🇹 Austria",
+    "+46" to "🇸🇪 Suecia",
+    "+47" to "🇳🇴 Noruega",
+    "+45" to "🇩🇰 Dinamarca",
+    "+358" to "🇫🇮 Finlandia",
+    "+30" to "🇬🇷 Grecia",
+    "+90" to "🇹🇷 Turquía",
+    "+972" to "🇮🇱 Israel",
+    "+966" to "🇸🇦 Arabia Saudí",
+    "+971" to "🇦🇪 Emiratos Árabes",
+    "+61" to "🇦🇺 Australia",
+    "+64" to "🇳🇿 Nueva Zelanda"
+)
+
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun RegisterScreen(isDarkTheme: Boolean, onBack: () -> Unit) {
     var nombre by remember { mutableStateOf("") }
     var dni by remember { mutableStateOf("") }
     var email by remember { mutableStateOf("") }
     var pass by remember { mutableStateOf("") }
-    var telf by remember { mutableStateOf("") }
+    var prefijo by remember { mutableStateOf("+34") }
+    var numeroTelf by remember { mutableStateOf("") }
+    var prefijoDesplegado by remember { mutableStateOf(false) }
     val scope = rememberCoroutineScope()
     val context = LocalContext.current
 
@@ -116,13 +178,58 @@ fun RegisterScreen(isDarkTheme: Boolean, onBack: () -> Unit) {
                     Spacer(Modifier.height(14.dp))
                     OutlinedTextField(value = nombre, onValueChange = { nombre = it }, modifier = Modifier.fillMaxWidth(), label = { Text("Nombre completo") }, singleLine = true, shape = RoundedCornerShape(14.dp), colors = inputColors, leadingIcon = { Icon(Icons.Default.Person, null, tint = BlueAccent.copy(0.6f)) })
                     Spacer(Modifier.height(10.dp))
-                    OutlinedTextField(value = dni, onValueChange = { dni = it.uppercase() }, modifier = Modifier.fillMaxWidth(), label = { Text("DNI (8 números + 1 letra)") }, singleLine = true, shape = RoundedCornerShape(14.dp), colors = inputColors, leadingIcon = { Icon(Icons.Default.Badge, null, tint = BlueAccent.copy(0.6f)) })
+                    OutlinedTextField(value = dni, onValueChange = { dni = it.uppercase() }, modifier = Modifier.fillMaxWidth(), label = { Text("DNI / NIE / Documento extranjero") }, singleLine = true, shape = RoundedCornerShape(14.dp), colors = inputColors, leadingIcon = { Icon(Icons.Default.Badge, null, tint = BlueAccent.copy(0.6f)) })
                     Spacer(Modifier.height(10.dp))
                     OutlinedTextField(value = email, onValueChange = { email = it }, modifier = Modifier.fillMaxWidth(), label = { Text("Email") }, singleLine = true, shape = RoundedCornerShape(14.dp), colors = inputColors, leadingIcon = { Icon(Icons.Default.Email, null, tint = BlueAccent.copy(0.6f)) })
                     Spacer(Modifier.height(10.dp))
                     OutlinedTextField(value = pass, onValueChange = { pass = it }, modifier = Modifier.fillMaxWidth(), label = { Text("Contraseña") }, singleLine = true, visualTransformation = PasswordVisualTransformation(), shape = RoundedCornerShape(14.dp), colors = inputColors, leadingIcon = { Icon(Icons.Default.Lock, null, tint = BlueAccent.copy(0.6f)) })
                     Spacer(Modifier.height(10.dp))
-                    OutlinedTextField(value = telf, onValueChange = { telf = it }, modifier = Modifier.fillMaxWidth(), label = { Text("Teléfono") }, singleLine = true, shape = RoundedCornerShape(14.dp), colors = inputColors, leadingIcon = { Icon(Icons.Default.Phone, null, tint = BlueAccent.copy(0.6f)) })
+
+                    Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        ExposedDropdownMenuBox(
+                            expanded = prefijoDesplegado,
+                            onExpandedChange = { prefijoDesplegado = it },
+                            modifier = Modifier.width(115.dp)
+                        ) {
+                            OutlinedTextField(
+                                value = prefijo,
+                                onValueChange = {},
+                                readOnly = true,
+                                singleLine = true,
+                                label = { Text("Prefijo") },
+                                trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = prefijoDesplegado) },
+                                shape = RoundedCornerShape(14.dp),
+                                colors = inputColors,
+                                modifier = Modifier.menuAnchor()
+                            )
+                            ExposedDropdownMenu(
+                                expanded = prefijoDesplegado,
+                                onDismissRequest = { prefijoDesplegado = false }
+                            ) {
+                                PREFIJOS_PAIS.forEach { (codigo, nombre) ->
+                                    DropdownMenuItem(
+                                        text = { Text("$codigo  $nombre", fontSize = 12.sp) },
+                                        onClick = {
+                                            prefijo = codigo
+                                            prefijoDesplegado = false
+                                        }
+                                    )
+                                }
+                            }
+                        }
+
+                        OutlinedTextField(
+                            value = numeroTelf,
+                            onValueChange = { numeroTelf = it.filter { c -> c.isDigit() } },
+                            modifier = Modifier.weight(1f),
+                            label = { Text("Número") },
+                            singleLine = true,
+                            shape = RoundedCornerShape(14.dp),
+                            colors = inputColors,
+                            leadingIcon = { Icon(Icons.Default.Phone, null, tint = BlueAccent.copy(0.6f)) },
+                            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Phone)
+                        )
+                    }
                 }
             }
 
@@ -130,13 +237,19 @@ fun RegisterScreen(isDarkTheme: Boolean, onBack: () -> Unit) {
 
             Button(
                 onClick = {
-                    if (nombre.isEmpty() || dni.isEmpty() || email.isEmpty() || pass.isEmpty() || telf.isEmpty()) {
+                    if (nombre.isEmpty() || dni.isEmpty() || email.isEmpty() || pass.isEmpty() || numeroTelf.isEmpty()) {
                         Toast.makeText(context, "Por favor, rellena todos los campos", Toast.LENGTH_SHORT).show(); return@Button
                     }
-                    val dniRegex = Regex("^[0-9]{8}[A-Z]$")
-                    if (!dni.matches(dniRegex)) {
-                        Toast.makeText(context, "Formato de DNI inválido (Ej: 12345678A)", Toast.LENGTH_SHORT).show(); return@Button
+                    val dniEspRegex = Regex("^[0-9]{8}[A-Z]$")
+                    val nieEspRegex = Regex("^[XYZ][0-9]{7}[A-Z]$")
+                    val docExtranjeroRegex = Regex("^[A-Z0-9]{5,20}$")
+                    if (!dni.matches(dniEspRegex) && !dni.matches(nieEspRegex) && !dni.matches(docExtranjeroRegex)) {
+                        Toast.makeText(context, "Documento de identidad inválido", Toast.LENGTH_SHORT).show(); return@Button
                     }
+                    if (numeroTelf.length < 7) {
+                        Toast.makeText(context, "Número de teléfono inválido", Toast.LENGTH_SHORT).show(); return@Button
+                    }
+                    val telefonoFinal = numeroTelf
                     scope.launch {
                         try {
                             val exists = withContext(Dispatchers.IO) {
@@ -146,15 +259,15 @@ fun RegisterScreen(isDarkTheme: Boolean, onBack: () -> Unit) {
                             }
 
                             if (exists) {
-                                withContext(Dispatchers.Main) { Toast.makeText(context, "El DNI ya está registrado", Toast.LENGTH_SHORT).show() }
+                                withContext(Dispatchers.Main) { Toast.makeText(context, "El documento ya está registrado", Toast.LENGTH_SHORT).show() }
                             } else {
                                 val nuevoUsuario = Usuario(
-                                    id = 0, // Postgres genera el ID
+                                    id = 0,
                                     nombre = nombre,
                                     dni = dni,
                                     email = email,
                                     contraseniaHash = pass,
-                                    telefono = telf,
+                                    telefono = telefonoFinal,
                                     admin = 0,
                                     premium = false
                                 )
@@ -174,8 +287,7 @@ fun RegisterScreen(isDarkTheme: Boolean, onBack: () -> Unit) {
                         }
                     }
                 },
-                modifier = Modifier.fillMaxWidth().height(56.dp).alpha(btnAlpha)
-                    .alpha(btnAlpha),
+                modifier = Modifier.fillMaxWidth().height(56.dp).alpha(btnAlpha),
                 shape = RoundedCornerShape(16.dp),
                 colors = ButtonDefaults.buttonColors(containerColor = Color.Transparent), contentPadding = PaddingValues()
             ) {
