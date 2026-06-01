@@ -1,10 +1,12 @@
 package com.example.trainium2.models
 
+import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 
 @Serializable
 data class Usuario(
-    val id: Int,
+    @SerialName("id")
+    val id: Int = 0,
     val nombre: String,
     val dni: String,
     val contraseniaHash: String,

@@ -39,6 +39,8 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import kotlinx.serialization.json.buildJsonObject
+import kotlinx.serialization.json.put
 
 private val PREFIJOS_PAIS = listOf(
     "+34" to "🇪🇸 España",
@@ -260,19 +262,19 @@ fun RegisterScreen(isDarkTheme: Boolean, onBack: () -> Unit) {
 
                             if (exists) {
                                 withContext(Dispatchers.Main) { Toast.makeText(context, "El documento ya está registrado", Toast.LENGTH_SHORT).show() }
-                            } else {
-                                val nuevoUsuario = Usuario(
-                                    id = 0,
-                                    nombre = nombre,
-                                    dni = dni,
-                                    email = email,
-                                    contraseniaHash = pass,
-                                    telefono = telefonoFinal,
-                                    admin = 0,
-                                    premium = false
-                                )
+                                } else {
                                 withContext(Dispatchers.IO) {
-                                    SupabaseClient.client.from("usuarios").insert(nuevoUsuario)
+                                    SupabaseClient.client.from("usuarios").insert(
+                                        buildJsonObject {
+                                            put("nombre", nombre)
+                                            put("dni", dni)
+                                            put("email", email)
+                                            put("contraseniaHash", pass)
+                                            put("telefono", telefonoFinal)
+                                            put("admin", 0)
+                                            put("premium", false)
+                                        }
+                                    )
                                 }
 
                                 withContext(Dispatchers.Main) {
