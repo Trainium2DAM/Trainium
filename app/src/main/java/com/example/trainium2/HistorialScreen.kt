@@ -24,6 +24,8 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.trainium2.models.Pago
+import com.example.trainium2.DbColumns
+import com.example.trainium2.DbTables
 import com.example.trainium2.ui.theme.*
 import io.github.jan.supabase.postgrest.from
 import kotlinx.coroutines.Dispatchers
@@ -32,14 +34,13 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
 @Composable
-fun HistorialScreen(idUsuario: Int, isDarkTheme: Boolean, onBack: () -> Unit) {
+fun HistorialScreen(idUsuario: Int, isDarkTheme: Boolean, onToggleTheme: () -> Unit, onBack: () -> Unit) {
     var pagos by remember { mutableStateOf(listOf<Pago>()) }
     var cargando by remember { mutableStateOf(true) }
     var errorConexion by remember { mutableStateOf(false) }
     val scope = rememberCoroutineScope()
 
     var visible by remember { mutableStateOf(false) }
-    val alphaHeader by animateFloatAsState(if (visible) 1f else 0f, tween(800), label = "h")
 
     val textColor = if (isDarkTheme) Color.White else BlueDark
     val subtitleColor = if (isDarkTheme) Color.White.copy(0.4f) else BlueDark.copy(0.4f)
@@ -57,10 +58,10 @@ fun HistorialScreen(idUsuario: Int, isDarkTheme: Boolean, onBack: () -> Unit) {
         scope.launch {
             try {
                 val data = withContext(Dispatchers.IO) {
-                    SupabaseClient.client.from("pagos")
+                    SupabaseClient.client.from(DbTables.PAGOS)
                         .select {
                             filter {
-                                eq("id_usuario", idUsuario)
+                                eq(DbColumns.ID_USUARIO, idUsuario)
                             }
                         }
                         .decodeList<Pago>()
@@ -83,14 +84,20 @@ fun HistorialScreen(idUsuario: Int, isDarkTheme: Boolean, onBack: () -> Unit) {
 
     Box(Modifier.fillMaxSize().background(bgBrush)) {
         Column(Modifier.fillMaxSize().padding(horizontal = 20.dp)) {
-            Row(Modifier.fillMaxWidth().statusBarsPadding().alpha(alphaHeader), verticalAlignment = Alignment.CenterVertically) {
-                TextButton(onClick = onBack) { Text("← Volver", color = BlueAccent, fontWeight = FontWeight.Bold) }
-                Column(Modifier.weight(1f)) {
-                    Text("Pagos", fontSize = 24.sp, fontWeight = FontWeight.Bold, color = textColor)
-                    Text("Tu historial financiero", fontSize = 12.sp, color = subtitleColor)
-                }
-                IconButton(onClick = { cargarDatos() }) { Icon(Icons.Default.Refresh, null, tint = BlueAccent) }
-            }
+            ScreenHeader(
+                title = "Pagos",
+                subtitle = "Tu historial financiero",
+                onBack = onBack,
+                trailing = {
+                    IconButton(onClick = { cargarDatos() }) {
+                        Icon(Icons.Default.Refresh, null, tint = BlueAccent)
+                    }
+                },
+                textColor = textColor,
+                subtitleColor = subtitleColor,
+                onToggleTheme = onToggleTheme,
+                darkTheme = isDarkTheme
+            )
             Spacer(Modifier.height(30.dp))
 
             if (cargando) {

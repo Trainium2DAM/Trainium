@@ -1,7 +1,5 @@
 package com.example.trainium2
 
-import android.app.DatePickerDialog
-import android.app.TimePickerDialog
 import android.widget.Toast
 import androidx.compose.animation.core.*
 import androidx.compose.foundation.Image
@@ -12,6 +10,7 @@ import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Build
 import androidx.compose.material.icons.filled.CheckCircle
@@ -32,6 +31,9 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.trainium2.models.Maquina
 import com.example.trainium2.models.Reserva
+import com.example.trainium2.AppConfig
+import com.example.trainium2.DbColumns
+import com.example.trainium2.DbTables
 import com.example.trainium2.ui.theme.*
 import io.github.jan.supabase.postgrest.from
 import kotlinx.coroutines.Dispatchers
@@ -39,10 +41,14 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import java.text.SimpleDateFormat
+import java.time.LocalDate
+import java.time.LocalTime
+import java.time.ZoneId
 import java.util.*
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun MaquinasScreen(isAdmin: Boolean, idUsuario: Int, isDarkTheme: Boolean, onBack: () -> Unit) {
+fun MaquinasScreen(isAdmin: Boolean, idUsuario: Int, isDarkTheme: Boolean, onToggleTheme: () -> Unit, onBack: () -> Unit) {
     var listaMaquinas by remember { mutableStateOf(listOf<Maquina>()) }
     var cargando by remember { mutableStateOf(true) }
     val scope = rememberCoroutineScope()
@@ -55,7 +61,10 @@ fun MaquinasScreen(isAdmin: Boolean, idUsuario: Int, isDarkTheme: Boolean, onBac
     var fechaDesdeM by remember { mutableStateOf("") }
     var horaDesdeM by remember { mutableStateOf("") }
     var fechaHastaM by remember { mutableStateOf("") }
-    var horaHastaM by remember { mutableStateOf("") }
+    var mostrarPickerMantenimientoDesde by remember { mutableStateOf(false) }
+    var mostrarPickerMantenimientoHasta by remember { mutableStateOf(false) }
+    var mostrarTimePickerMantenimientoDesde by remember { mutableStateOf(false) }
+    var mostrarTimePickerMantenimientoHasta by remember { mutableStateOf(false) }
 
     var maquinaParaReservar by remember { mutableStateOf<Maquina?>(null) }
     var mostrarSelectorTiempo by remember { mutableStateOf(false) }
@@ -64,12 +73,12 @@ fun MaquinasScreen(isAdmin: Boolean, idUsuario: Int, isDarkTheme: Boolean, onBac
     var reservasDelUsuario by remember { mutableStateOf(listOf<Reserva>()) }
     var fechaSeleccionada by remember { mutableStateOf("") }
     var horaSeleccionada by remember { mutableStateOf("") }
-    val calendar = Calendar.getInstance()
+    var mostrarDatePickerReserva by remember { mutableStateOf(false) }
 
     val textColor = if (isDarkTheme) Color.White else BlueDark
     val subtitleColor = if (isDarkTheme) Color.White.copy(0.35f) else BlueDark.copy(0.4f)
     val cardBg = if (isDarkTheme) Color(0xFF162347).copy(0.9f) else Color.White
-    
+
     val bgBrush = if (isDarkTheme) {
         Brush.verticalGradient(listOf(BlueDark, BlueMid, BlueDeep))
     } else {
@@ -81,19 +90,11 @@ fun MaquinasScreen(isAdmin: Boolean, idUsuario: Int, isDarkTheme: Boolean, onBac
         scope.launch {
             try {
                 val maquinas = withContext(Dispatchers.IO) {
-                    SupabaseClient.client.from("maquinas")
-                        .select()
-                        .decodeList<Maquina>()
+                    SupabaseClient.client.from(DbTables.MAQUINAS).select().decodeList<Maquina>()
                 }
-                withContext(Dispatchers.Main) {
-                    listaMaquinas = maquinas
-                    cargando = false
-                }
+                withContext(Dispatchers.Main) { listaMaquinas = maquinas; cargando = false }
             } catch (e: Exception) {
-                withContext(Dispatchers.Main) {
-                    Toast.makeText(context, "Error al cargar máquinas: ${e.message}", Toast.LENGTH_SHORT).show()
-                    cargando = false
-                }
+                withContext(Dispatchers.Main) { Toast.makeText(context, "Error: ${e.message}", Toast.LENGTH_SHORT).show(); cargando = false }
             }
         }
     }
@@ -101,99 +102,48 @@ fun MaquinasScreen(isAdmin: Boolean, idUsuario: Int, isDarkTheme: Boolean, onBac
     fun activarMantenimiento(maquina: Maquina, desde: String, hasta: String) {
         scope.launch {
             try {
-                val sdfFull = SimpleDateFormat("yyyy-MM-dd HH:mm", Locale.getDefault())
+                val sdfFull = SimpleDateFormat(AppConfig.FORMAT_DATE_TIME, Locale.getDefault())
                 val calDesde = Calendar.getInstance().apply { time = sdfFull.parse(desde)!! }
                 val calHasta = Calendar.getInstance().apply { time = sdfFull.parse(hasta)!! }
-
                 withContext(Dispatchers.IO) {
-                    // 1. Poner máquina en mantenimiento con rango completo
-                    SupabaseClient.client.from("maquinas")
-                        .update({
-                            set("operativa", false)
-                            set("mantenimiento_desde", desde)
-                            set("mantenimiento_hasta", hasta)
-                        }) { filter { eq("id", maquina.id) } }
-
-                    // 2. Buscar TODAS las reservas de esta máquina
-                    val reservasAfectadas = SupabaseClient.client.from("reservas")
-                        .select {
-                            filter {
-                                eq("id_maquina", maquina.id)
-                                eq("estado", true)
-                            }
-                        }.decodeList<Reserva>()
-
+                    SupabaseClient.client.from(DbTables.MAQUINAS).update({
+                        set(DbColumns.OPERATIVA, false)
+                        set("mantenimiento_desde", desde)
+                        set("mantenimiento_hasta", hasta)
+                    }) { filter { eq(DbColumns.ID, maquina.id) } }
+                    val reservasAfectadas = SupabaseClient.client.from(DbTables.RESERVAS).select {
+                        filter { eq(DbColumns.ID_MAQUINA, maquina.id); eq(DbColumns.ESTADO, true) }
+                    }.decodeList<Reserva>()
                     for (res in reservasAfectadas) {
-                        val resInicio = Calendar.getInstance().apply { 
-                            val sdfRes = SimpleDateFormat("yyyy-MM-dd HH:mm", Locale.getDefault())
-                            time = sdfRes.parse("${res.fecha} ${res.horaInicio}")!! 
-                        }
-                        val resFin = Calendar.getInstance().apply { 
-                            val sdfRes = SimpleDateFormat("yyyy-MM-dd HH:mm", Locale.getDefault())
-                            time = sdfRes.parse("${res.fecha} ${res.horaFin}")!! 
-                        }
-
-                        // Comprobar solapamiento de rangos
-                        val solapa = resInicio.timeInMillis < calHasta.timeInMillis && 
-                                     resFin.timeInMillis > calDesde.timeInMillis
-
-                        if (solapa) {
-                            SupabaseClient.client.from("reservas")
-                                .update({ set("estado", false) }) { filter { eq("id", res.id ?: 0) } }
+                        val sdfRes = SimpleDateFormat(AppConfig.FORMAT_DATE_TIME, Locale.getDefault())
+                        val resInicio = Calendar.getInstance().apply { time = sdfRes.parse("${res.fecha} ${res.horaInicio}")!! }
+                        val resFin = Calendar.getInstance().apply { time = sdfRes.parse("${res.fecha} ${res.horaFin}")!! }
+                        if (resInicio.timeInMillis < calHasta.timeInMillis && resFin.timeInMillis > calDesde.timeInMillis) {
+                            SupabaseClient.client.from(DbTables.RESERVAS).update({ set(DbColumns.ESTADO, false) }) { filter { eq(DbColumns.ID, res.id ?: 0) } }
                         }
                     }
                 }
-                withContext(Dispatchers.Main) {
-                    cargarDatos()
-                    Toast.makeText(context, "Mantenimiento activado hasta el $hasta", Toast.LENGTH_LONG).show()
-                }
-            } catch (e: Exception) {
-                withContext(Dispatchers.Main) { Toast.makeText(context, "Error: ${e.message}", Toast.LENGTH_SHORT).show() }
-            }
+                withContext(Dispatchers.Main) { cargarDatos(); Toast.makeText(context, "Mantenimiento activado hasta el $hasta", Toast.LENGTH_LONG).show() }
+            } catch (e: Exception) { withContext(Dispatchers.Main) { Toast.makeText(context, "Error: ${e.message}", Toast.LENGTH_SHORT).show() } }
         }
     }
-
-    val pickerMantenimientoHasta = DatePickerDialog(context, { _, y, m, d ->
-        val fHasta = String.format("%d-%02d-%02d", y, m + 1, d)
-        TimePickerDialog(context, { _, h, min ->
-            val hHasta = String.format("%02d:%02d", h, min)
-            maquinaParaMantenimiento?.let { 
-                activarMantenimiento(it, "$fechaDesdeM $horaDesdeM", "$fHasta $hHasta") 
-            }
-        }, 12, 0, true).show()
-    }, calendar.get(Calendar.YEAR), calendar.get(Calendar.MONTH), calendar.get(Calendar.DAY_OF_MONTH))
-
-    val pickerMantenimientoDesde = DatePickerDialog(context, { _, y, m, d ->
-        fechaDesdeM = String.format("%d-%02d-%02d", y, m + 1, d)
-        TimePickerDialog(context, { _, h, min ->
-            horaDesdeM = String.format("%02d:%02d", h, min)
-            // Una vez elegido el inicio, pedimos el fin
-            Toast.makeText(context, "Ahora selecciona la fecha de FIN", Toast.LENGTH_SHORT).show()
-            pickerMantenimientoHasta.show()
-        }, 12, 0, true).show()
-    }, calendar.get(Calendar.YEAR), calendar.get(Calendar.MONTH), calendar.get(Calendar.DAY_OF_MONTH))
 
     fun alternarEstadoOperativo(maquina: Maquina) {
         if (maquina.operativa) {
             maquinaParaMantenimiento = maquina
-            pickerMantenimientoDesde.show()
+            mostrarPickerMantenimientoDesde = true
         } else {
             scope.launch {
                 try {
                     withContext(Dispatchers.IO) {
-                        SupabaseClient.client.from("maquinas")
-                            .update({
-                                set("operativa", true)
-                                set<String?>("mantenimiento_desde", null)
-                                set<String?>("mantenimiento_hasta", null)
-                            }) { filter { eq("id", maquina.id) } }
+                        SupabaseClient.client.from(DbTables.MAQUINAS).update({
+                            set(DbColumns.OPERATIVA, true)
+                            set<String?>("mantenimiento_desde", null)
+                            set<String?>("mantenimiento_hasta", null)
+                        }) { filter { eq(DbColumns.ID, maquina.id) } }
                     }
-                    withContext(Dispatchers.Main) {
-                        cargarDatos(); Toast.makeText(context, "Máquina operativa", Toast.LENGTH_SHORT).show()
-                    }
-                } catch (e: Exception) {
-                    withContext(Dispatchers.Main) { Toast.makeText(context, "Error: ${e.message}", Toast.LENGTH_SHORT).show() }
-                }
+                    withContext(Dispatchers.Main) { cargarDatos(); Toast.makeText(context, "Maquina operativa", Toast.LENGTH_SHORT).show() }
+                } catch (e: Exception) { withContext(Dispatchers.Main) { Toast.makeText(context, "Error: ${e.message}", Toast.LENGTH_SHORT).show() } }
             }
         }
     }
@@ -201,23 +151,9 @@ fun MaquinasScreen(isAdmin: Boolean, idUsuario: Int, isDarkTheme: Boolean, onBac
     fun eliminarMaquina(id: Int) {
         scope.launch {
             try {
-                withContext(Dispatchers.IO) {
-                    SupabaseClient.client.from("maquinas")
-                        .delete {
-                            filter {
-                                eq("id", id)
-                            }
-                        }
-                }
-                withContext(Dispatchers.Main) {
-                    cargarDatos()
-                    Toast.makeText(context, "Máquina eliminada", Toast.LENGTH_SHORT).show()
-                }
-            } catch (e: Exception) {
-                withContext(Dispatchers.Main) {
-                    Toast.makeText(context, "Error al eliminar: ${e.message}", Toast.LENGTH_SHORT).show()
-                }
-            }
+                withContext(Dispatchers.IO) { SupabaseClient.client.from(DbTables.MAQUINAS).delete { filter { eq(DbColumns.ID, id) } } }
+                withContext(Dispatchers.Main) { cargarDatos(); Toast.makeText(context, "Maquina eliminada", Toast.LENGTH_SHORT).show() }
+            } catch (e: Exception) { withContext(Dispatchers.Main) { Toast.makeText(context, "Error: ${e.message}", Toast.LENGTH_SHORT).show() } }
         }
     }
 
@@ -226,120 +162,45 @@ fun MaquinasScreen(isAdmin: Boolean, idUsuario: Int, isDarkTheme: Boolean, onBac
     fun ejecutarReserva(maquina: Maquina, fecha: String, horaInicio: String, duracionMinutos: Int) {
         scope.launch {
             try {
-                val sdf = SimpleDateFormat("HH:mm", Locale.getDefault())
+                val sdf = SimpleDateFormat(AppConfig.FORMAT_HOUR_MINUTE, Locale.getDefault())
                 val calInicioNueva = Calendar.getInstance().apply { time = sdf.parse(horaInicio)!! }
                 val calFinNueva = (calInicioNueva.clone() as Calendar).apply { add(Calendar.MINUTE, duracionMinutos) }
                 val horaFin = sdf.format(calFinNueva.time)
-                
-                // 1. Obtener TODAS las reservas de esta máquina para ese día (Global)
-                val reservasMaquina = withContext(Dispatchers.IO) {
-                    SupabaseClient.client.from("reservas")
-                        .select {
-                            filter {
-                                eq("id_maquina", maquina.id)
-                                eq("fecha", fecha)
-                                eq("estado", true)
-                            }
-                        }.decodeList<Reserva>()
-                }
 
-                // 2. Comprobar solapamiento global (Máquina ocupada)
+                val reservasMaquina = withContext(Dispatchers.IO) {
+                    SupabaseClient.client.from(DbTables.RESERVAS).select {
+                        filter { eq(DbColumns.ID_MAQUINA, maquina.id); eq(DbColumns.FECHA, fecha); eq(DbColumns.ESTADO, true) }
+                    }.decodeList<Reserva>()
+                }
                 for (res in reservasMaquina) {
                     val exInicio = Calendar.getInstance().apply { time = sdf.parse(res.horaInicio)!! }
                     val exFin = Calendar.getInstance().apply { time = sdf.parse(res.horaFin)!! }
                     if (calInicioNueva.timeInMillis < exFin.timeInMillis && calFinNueva.timeInMillis > exInicio.timeInMillis) {
-                        withContext(Dispatchers.Main) {
-                            Toast.makeText(context, "Esta máquina ya está ocupada de ${res.horaInicio} a ${res.horaFin}", Toast.LENGTH_LONG).show()
-                        }
+                        withContext(Dispatchers.Main) { Toast.makeText(context, "Esta maquina ya esta ocupada de ${res.horaInicio} a ${res.horaFin}", Toast.LENGTH_LONG).show() }
                         return@launch
                     }
                 }
 
-                // 3. Comprobar solapamiento del USUARIO (Ya tiene otra reserva)
                 val reservasUsuario = withContext(Dispatchers.IO) {
-                    SupabaseClient.client.from("reservas")
-                        .select {
-                            filter {
-                                eq("id_usuario", idUsuario)
-                                eq("fecha", fecha)
-                                eq("estado", true)
-                            }
-                        }.decodeList<Reserva>()
+                    SupabaseClient.client.from(DbTables.RESERVAS).select {
+                        filter { eq(DbColumns.ID_USUARIO, idUsuario); eq(DbColumns.FECHA, fecha); eq(DbColumns.ESTADO, true) }
+                    }.decodeList<Reserva>()
                 }
-
                 for (res in reservasUsuario) {
                     val exInicio = Calendar.getInstance().apply { time = sdf.parse(res.horaInicio)!! }
                     val exFin = Calendar.getInstance().apply { time = sdf.parse(res.horaFin)!! }
                     if (calInicioNueva.timeInMillis < exFin.timeInMillis && calFinNueva.timeInMillis > exInicio.timeInMillis) {
-                        withContext(Dispatchers.Main) {
-                            Toast.makeText(context, "Ya tienes una reserva de ${res.horaInicio} a ${res.horaFin}", Toast.LENGTH_LONG).show()
-                        }
+                        withContext(Dispatchers.Main) { Toast.makeText(context, "Ya tienes una reserva de ${res.horaInicio} a ${res.horaFin}", Toast.LENGTH_LONG).show() }
                         return@launch
                     }
                 }
 
-                val nuevaReserva = Reserva(
-                    idUsuario = idUsuario,
-                    idMaquina = maquina.id,
-                    fecha = fecha,
-                    horaInicio = horaInicio,
-                    horaFin = horaFin,
-                    estado = true
-                )
-
                 withContext(Dispatchers.IO) {
-                    SupabaseClient.client.from("reservas").insert(nuevaReserva)
+                    SupabaseClient.client.from(DbTables.RESERVAS).insert(Reserva(idUsuario = idUsuario, idMaquina = maquina.id, fecha = fecha, horaInicio = horaInicio, horaFin = horaFin, estado = true))
                 }
-                
-                withContext(Dispatchers.Main) {
-                    Toast.makeText(context, "Reserva confirmada", Toast.LENGTH_LONG).show()
-                }
-            } catch (e: Exception) {
-                withContext(Dispatchers.Main) {
-                    Toast.makeText(context, "Error: ${e.message}", Toast.LENGTH_SHORT).show()
-                }
-            }
+                withContext(Dispatchers.Main) { Toast.makeText(context, "Reserva confirmada", Toast.LENGTH_LONG).show() }
+            } catch (e: Exception) { withContext(Dispatchers.Main) { Toast.makeText(context, "Error: ${e.message}", Toast.LENGTH_SHORT).show() } }
         }
-    }
-
-    val datePickerDialog = DatePickerDialog(context, { _, y, m, d ->
-        fechaSeleccionada = String.format("%d-%02d-%02d", y, m + 1, d)
-        scope.launch {
-            try {
-                cargando = true
-                val dataM = withContext(Dispatchers.IO) {
-                    SupabaseClient.client.from("reservas")
-                        .select {
-                            filter {
-                                eq("id_maquina", maquinaParaReservar?.id ?: 0)
-                                eq("fecha", fechaSeleccionada)
-                                eq("estado", true)
-                            }
-                        }.decodeList<Reserva>()
-                }
-                val dataU = withContext(Dispatchers.IO) {
-                    SupabaseClient.client.from("reservas")
-                        .select {
-                            filter {
-                                eq("id_usuario", idUsuario)
-                                eq("fecha", fechaSeleccionada)
-                                eq("estado", true)
-                            }
-                        }.decodeList<Reserva>()
-                }
-                withContext(Dispatchers.Main) {
-                    reservasDeLaMaquina = dataM
-                    reservasDelUsuario = dataU
-                    mostrarSelectorHora = true
-                    cargando = false
-                }
-            } catch (e: Exception) {
-                cargando = false
-                Toast.makeText(context, "Error: ${e.message}", Toast.LENGTH_SHORT).show()
-            }
-        }
-    }, calendar.get(Calendar.YEAR), calendar.get(Calendar.MONTH), calendar.get(Calendar.DAY_OF_MONTH)).apply {
-        datePicker.minDate = System.currentTimeMillis()
     }
 
     Scaffold(
@@ -347,20 +208,22 @@ fun MaquinasScreen(isAdmin: Boolean, idUsuario: Int, isDarkTheme: Boolean, onBac
         floatingActionButton = {
             if (isAdmin) {
                 FloatingActionButton(onClick = { mostrarDialogoAdd = true }, containerColor = BlueAccent, contentColor = Color.White) {
-                    Icon(Icons.Default.Add, "Añadir")
+                    Icon(Icons.Default.Add, "Anadir")
                 }
             }
         }
     ) { padding ->
         Box(Modifier.fillMaxSize().background(bgBrush)) {
-            Column(Modifier.fillMaxSize().padding(padding).padding(16.dp)) {
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    TextButton(onClick = onBack) { Text("← Volver", color = BlueAccent, fontWeight = FontWeight.Bold) }
-                    Column(Modifier.weight(1f)) {
-                        Text("Equipamiento", fontSize = 22.sp, fontWeight = FontWeight.Bold, color = textColor)
-                        Text("Gestiona tus entrenamientos", fontSize = 12.sp, color = subtitleColor)
-                    }
-                }
+            Column(Modifier.fillMaxSize().padding(padding).padding(20.dp)) {
+                ScreenHeader(
+                    title = "Equipamiento",
+                    subtitle = "Gestiona tus entrenamientos",
+                    onBack = onBack,
+                    textColor = textColor,
+                    subtitleColor = subtitleColor,
+                    onToggleTheme = onToggleTheme,
+                    darkTheme = isDarkTheme
+                )
                 Spacer(Modifier.height(12.dp))
 
                 if (cargando) {
@@ -371,7 +234,6 @@ fun MaquinasScreen(isAdmin: Boolean, idUsuario: Int, isDarkTheme: Boolean, onBac
                             var itemVisible by remember { mutableStateOf(false) }
                             LaunchedEffect(Unit) { delay(index * 50L); itemVisible = true }
                             val itemAlpha by animateFloatAsState(if (itemVisible) 1f else 0f, tween(400))
-
                             Card(
                                 Modifier.fillMaxWidth().alpha(itemAlpha).shadow(6.dp, RoundedCornerShape(16.dp)),
                                 shape = RoundedCornerShape(16.dp),
@@ -383,7 +245,6 @@ fun MaquinasScreen(isAdmin: Boolean, idUsuario: Int, isDarkTheme: Boolean, onBac
                                             val id = context.resources.getIdentifier("maquina${maquina.id}", "drawable", context.packageName)
                                             if (id == 0) context.resources.getIdentifier("blanco", "drawable", context.packageName) else id
                                         }
-
                                         Image(painterResource(resId), null, Modifier.size(80.dp).clip(RoundedCornerShape(12.dp)), contentScale = ContentScale.Crop)
                                         Spacer(Modifier.width(12.dp))
                                         Column(Modifier.weight(1f)) {
@@ -391,7 +252,6 @@ fun MaquinasScreen(isAdmin: Boolean, idUsuario: Int, isDarkTheme: Boolean, onBac
                                             if (!maquina.operativa) Text("FUERA DE SERVICIO", color = Color(0xFFFF6B6B), fontSize = 11.sp, fontWeight = FontWeight.Bold)
                                             else maquina.tipo?.let { Text(it, fontSize = 12.sp, color = subtitleColor) }
                                         }
-
                                         if (isAdmin) {
                                             IconButton(onClick = { alternarEstadoOperativo(maquina) }) {
                                                 Icon(if (maquina.operativa) Icons.Default.Build else Icons.Default.CheckCircle, null, tint = if (maquina.operativa) subtitleColor else BlueAccent)
@@ -404,9 +264,8 @@ fun MaquinasScreen(isAdmin: Boolean, idUsuario: Int, isDarkTheme: Boolean, onBac
                                     Spacer(Modifier.height(6.dp))
                                     maquina.descripcion?.let { Text(it, fontSize = 13.sp, color = textColor.copy(0.6f)) }
                                     Spacer(Modifier.height(10.dp))
-
                                     Button(
-                                        onClick = { maquinaParaReservar = maquina; datePickerDialog.show() },
+                                        onClick = { maquinaParaReservar = maquina; mostrarDatePickerReserva = true },
                                         enabled = maquina.operativa,
                                         modifier = Modifier.fillMaxWidth(),
                                         shape = RoundedCornerShape(12.dp),
@@ -428,125 +287,198 @@ fun MaquinasScreen(isAdmin: Boolean, idUsuario: Int, isDarkTheme: Boolean, onBac
         }
     }
 
-    if (mostrarSelectorHora) {
-        val sdf = SimpleDateFormat("HH:mm", Locale.getDefault())
-        AlertDialog(
-            onDismissRequest = { mostrarSelectorHora = false },
-            containerColor = cardBg,
-            title = { Text("¿A qué hora?", color = textColor, fontWeight = FontWeight.Bold) },
-            text = {
-                Column(Modifier.height(300.dp)) {
-                    Text("Gris: Máquina ocupada | Amarillo: Tú tienes reserva", color = subtitleColor, fontSize = 11.sp)
-                    Spacer(Modifier.height(8.dp))
-                    LazyColumn(verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                        val horas = (7..20).flatMap { h -> listOf("$h:00", "$h:30") }
-                        itemsIndexed(horas) { _, hStr ->
-                            val formattedH = if (hStr.length == 4) "0$hStr" else hStr
-                            val calH = Calendar.getInstance().apply { time = sdf.parse(formattedH)!! }
-                            
-                            // 1. ¿Máquina ocupada por OTRO usuario?
-                            val ocupadoMaquina = reservasDeLaMaquina.any { r ->
-                                val rIni = Calendar.getInstance().apply { time = sdf.parse(r.horaInicio)!! }
-                                val rFin = Calendar.getInstance().apply { time = sdf.parse(r.horaFin)!! }
-                                calH.timeInMillis >= rIni.timeInMillis && calH.timeInMillis < rFin.timeInMillis
-                            }
-
-                            // 2. ¿USUARIO ocupado él mismo?
-                            val ocupadoUsuario = reservasDelUsuario.any { r ->
-                                val rIni = Calendar.getInstance().apply { time = sdf.parse(r.horaInicio)!! }
-                                val rFin = Calendar.getInstance().apply { time = sdf.parse(r.horaFin)!! }
-                                calH.timeInMillis >= rIni.timeInMillis && calH.timeInMillis < rFin.timeInMillis
-                            }
-                            
-                            // 3. ¿Solapamiento potencial (Amarillo clickable)?
-                            // Si a esta hora estoy libre, pero tengo algo en la próxima hora
-                            val riesgoUsuario = !ocupadoUsuario && reservasDelUsuario.any { r ->
-                                val rIni = Calendar.getInstance().apply { time = sdf.parse(r.horaInicio)!! }
-                                // Si mi próxima reserva empieza en menos de 60 min
-                                calH.timeInMillis < rIni.timeInMillis && (calH.timeInMillis + 60*60*1000) > rIni.timeInMillis
-                            }
-
-                            val colorBoton = when {
-                                ocupadoMaquina -> Color.LightGray
-                                ocupadoUsuario -> Color(0xFFFFEB3B).copy(0.6f) // Amarillo claro
-                                riesgoUsuario -> Color(0xFFFFEB3B).copy(0.9f) // Amarillo más intenso
-                                else -> BlueAccent
-                            }
-
-                            Button(
-                                onClick = { 
-                                    horaSeleccionada = formattedH
-                                    mostrarSelectorHora = false
-                                    mostrarSelectorTiempo = true 
-                                },
-                                enabled = !ocupadoMaquina && !ocupadoUsuario,
-                                modifier = Modifier.fillMaxWidth(),
-                                shape = RoundedCornerShape(8.dp),
-                                colors = ButtonDefaults.buttonColors(
-                                    containerColor = colorBoton,
-                                    disabledContainerColor = colorBoton.copy(0.4f)
-                                )
-                            ) {
-                                Text(formattedH, color = if (ocupadoMaquina || ocupadoUsuario || riesgoUsuario) Color.DarkGray else Color.White)
-                            }
-                        }
+    if (mostrarPickerMantenimientoDesde) {
+        val datePickerState = rememberDatePickerState()
+        DatePickerDialog(
+            onDismissRequest = { mostrarPickerMantenimientoDesde = false },
+            confirmButton = {
+                TextButton(onClick = {
+                    datePickerState.selectedDateMillis?.let { millis ->
+                        val cal = Calendar.getInstance().apply { timeInMillis = millis }
+                        fechaDesdeM = String.format("%d-%02d-%02d", cal.get(Calendar.YEAR), cal.get(Calendar.MONTH) + 1, cal.get(Calendar.DAY_OF_MONTH))
                     }
-                }
+                    mostrarPickerMantenimientoDesde = false
+                    mostrarTimePickerMantenimientoDesde = true
+                }) { Text("OK", color = MaterialTheme.colorScheme.primary, fontWeight = FontWeight.Bold) }
             },
-            confirmButton = {}
+            dismissButton = { TextButton(onClick = { mostrarPickerMantenimientoDesde = false }) { Text("Cancelar", color = textColor.copy(0.5f)) } },
+            colors = DatePickerDefaults.colors(
+                selectedDayContentColor = Color.White, selectedDayContainerColor = BlueAccent,
+                todayContentColor = BlueAccent, todayDateBorderColor = BlueAccent,
+                dayContentColor = textColor, titleContentColor = Color.White, headlineContentColor = Color.White
+            )
+        ) { DatePicker(state = datePickerState) }
+    }
+
+    if (mostrarPickerMantenimientoHasta) {
+        val datePickerState = rememberDatePickerState()
+        DatePickerDialog(
+            onDismissRequest = { mostrarPickerMantenimientoHasta = false },
+            confirmButton = {
+                TextButton(onClick = {
+                    val mHasta = datePickerState.selectedDateMillis
+                    if (mHasta != null) {
+                        val cal = Calendar.getInstance().apply { timeInMillis = mHasta }
+                        fechaHastaM = String.format("%d-%02d-%02d", cal.get(Calendar.YEAR), cal.get(Calendar.MONTH) + 1, cal.get(Calendar.DAY_OF_MONTH))
+                        mostrarPickerMantenimientoHasta = false
+                        mostrarTimePickerMantenimientoHasta = true
+                    } else { mostrarPickerMantenimientoHasta = false }
+                }) { Text("OK", color = MaterialTheme.colorScheme.primary, fontWeight = FontWeight.Bold) }
+            },
+            dismissButton = { TextButton(onClick = { mostrarPickerMantenimientoHasta = false }) { Text("Cancelar", color = textColor.copy(0.5f)) } },
+            colors = DatePickerDefaults.colors(
+                selectedDayContentColor = Color.White, selectedDayContainerColor = BlueAccent,
+                todayContentColor = BlueAccent, todayDateBorderColor = BlueAccent,
+                dayContentColor = textColor, titleContentColor = Color.White, headlineContentColor = Color.White
+            )
+        ) { DatePicker(state = datePickerState) }
+    }
+
+    if (mostrarTimePickerMantenimientoDesde) {
+        AppTimePickerDialog(
+            onDismiss = { mostrarTimePickerMantenimientoDesde = false },
+            onConfirm = { h, min ->
+                horaDesdeM = String.format("%02d:%02d", h, min)
+                Toast.makeText(context, "Ahora selecciona la fecha de FIN", Toast.LENGTH_SHORT).show()
+                mostrarPickerMantenimientoHasta = true
+            },
+            title = "Desde que hora?",
+            initialHour = 12,
+            initialMinute = 0
+        )
+    }
+
+    if (mostrarTimePickerMantenimientoHasta) {
+        AppTimePickerDialog(
+            onDismiss = { mostrarTimePickerMantenimientoHasta = false },
+            onConfirm = { h, min ->
+                val hHasta = String.format("%02d:%02d", h, min)
+                maquinaParaMantenimiento?.let { activarMantenimiento(it, "$fechaDesdeM $horaDesdeM", "$fechaHastaM $hHasta") }
+            },
+            title = "Hasta que hora?",
+            initialHour = 12,
+            initialMinute = 0
+        )
+    }
+
+    if (mostrarDatePickerReserva) {
+        val datePickerState = rememberDatePickerState(
+            initialSelectedDateMillis = System.currentTimeMillis(),
+            selectableDates = object : SelectableDates {
+                override fun isSelectableDate(utcTimeMillis: Long): Boolean = utcTimeMillis >= System.currentTimeMillis() - 86400000L
+            }
+        )
+        DatePickerDialog(
+            onDismissRequest = { mostrarDatePickerReserva = false },
+            confirmButton = {
+                TextButton(onClick = {
+                    val mReserva = datePickerState.selectedDateMillis
+                    if (mReserva != null) {
+                        val cal = Calendar.getInstance().apply { timeInMillis = mReserva }
+                        fechaSeleccionada = String.format("%d-%02d-%02d", cal.get(Calendar.YEAR), cal.get(Calendar.MONTH) + 1, cal.get(Calendar.DAY_OF_MONTH))
+                        mostrarDatePickerReserva = false
+                        scope.launch {
+                            try {
+                                cargando = true
+                                val dataM = withContext(Dispatchers.IO) {
+                                    SupabaseClient.client.from(DbTables.RESERVAS).select {
+                                        filter { eq(DbColumns.ID_MAQUINA, maquinaParaReservar?.id ?: 0); eq(DbColumns.FECHA, fechaSeleccionada); eq(DbColumns.ESTADO, true) }
+                                    }.decodeList<Reserva>()
+                                }
+                                val dataU = withContext(Dispatchers.IO) {
+                                    SupabaseClient.client.from(DbTables.RESERVAS).select {
+                                        filter { eq(DbColumns.ID_USUARIO, idUsuario); eq(DbColumns.FECHA, fechaSeleccionada); eq(DbColumns.ESTADO, true) }
+                                    }.decodeList<Reserva>()
+                                }
+                                withContext(Dispatchers.Main) { reservasDeLaMaquina = dataM; reservasDelUsuario = dataU; mostrarSelectorHora = true; cargando = false }
+                            } catch (e: Exception) { cargando = false; Toast.makeText(context, "Error: ${e.message}", Toast.LENGTH_SHORT).show() }
+                        }
+                    } else { mostrarDatePickerReserva = false }
+                }) { Text("OK", color = MaterialTheme.colorScheme.primary, fontWeight = FontWeight.Bold) }
+            },
+            dismissButton = { TextButton(onClick = { mostrarDatePickerReserva = false }) { Text("Cancelar", color = textColor.copy(0.5f)) } },
+            colors = DatePickerDefaults.colors(
+                selectedDayContentColor = Color.White, selectedDayContainerColor = BlueAccent,
+                todayContentColor = BlueAccent, todayDateBorderColor = BlueAccent,
+                dayContentColor = textColor, titleContentColor = Color.White, headlineContentColor = Color.White
+            )
+        ) { DatePicker(state = datePickerState) }
+    }
+
+    if (mostrarSelectorHora) {
+        val hoy = LocalDate.now(ZoneId.systemDefault()).toString()
+        val minAhora = LocalTime.now(ZoneId.systemDefault()).let { it.hour * 60 + it.minute }
+        val (hInicial, mInicial) = if (fechaSeleccionada == hoy) {
+            val proxSlot = (minAhora / 30 + 1) * 30
+            (proxSlot / 60).coerceIn(7, 20) to (proxSlot % 60)
+        } else 7 to 0
+
+        AppTimePickerDialog(
+            onDismiss = { mostrarSelectorHora = false },
+            onConfirm = { h, min ->
+                horaSeleccionada = String.format("%02d:%02d", h, min)
+                mostrarSelectorTiempo = true
+            },
+            onValidate = { h, m ->
+                val selMin = h * 60 + m
+                val nowMin = LocalTime.now(ZoneId.systemDefault()).let { it.hour * 60 + it.minute }
+                if (fechaSeleccionada == hoy && selMin <= nowMin) return@AppTimePickerDialog "La hora debe ser posterior a la actual"
+                val selStr = String.format("%02d:%02d", h, m)
+                val ocupado = reservasDeLaMaquina.any { r ->
+                    val p1 = r.horaInicio.split(":"); val ini = p1[0].toInt() * 60 + p1[1].toInt()
+                    val p2 = r.horaFin.split(":"); val fin = p2[0].toInt() * 60 + p2[1].toInt()
+                    selMin >= ini && selMin < fin
+                }
+                if (ocupado) return@AppTimePickerDialog "Esta maquina ya esta ocupada a las $selStr"
+                val ocupadoUser = reservasDelUsuario.any { r ->
+                    val p1 = r.horaInicio.split(":"); val ini = p1[0].toInt() * 60 + p1[1].toInt()
+                    val p2 = r.horaFin.split(":"); val fin = p2[0].toInt() * 60 + p2[1].toInt()
+                    selMin >= ini && selMin < fin
+                }
+                if (ocupadoUser) return@AppTimePickerDialog "Ya tienes una reserva a las $selStr"
+                null
+            },
+            title = "A que hora?",
+            initialHour = hInicial,
+            initialMinute = mInicial
         )
     }
 
     if (mostrarSelectorTiempo) {
-        val sdf = SimpleDateFormat("HH:mm", Locale.getDefault())
-        AlertDialog(
-            onDismissRequest = { mostrarSelectorTiempo = false },
-            containerColor = cardBg,
-            title = { Text("Duración de la reserva", color = textColor, fontWeight = FontWeight.Bold) },
-            text = {
-                Column {
-                    Text("Selecciona cuánto tiempo vas a usar la máquina:", color = textColor.copy(0.7f), fontSize = 14.sp)
-                    Spacer(Modifier.height(16.dp))
-                    Column(Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                        listOf(15, 30, 45, 60).forEach { mins ->
-                            val calInicio = Calendar.getInstance().apply { time = sdf.parse(horaSeleccionada)!! }
-                            val calFin = (calInicio.clone() as Calendar).apply { add(Calendar.MINUTE, mins) }
-                            
-                            // Comprobamos si esta duración choca con algo del usuario
-                            val chocaUsuario = reservasDelUsuario.any { r ->
-                                val rIni = Calendar.getInstance().apply { time = sdf.parse(r.horaInicio)!! }
-                                val rFin = Calendar.getInstance().apply { time = sdf.parse(r.horaFin)!! }
-                                calInicio.timeInMillis < rFin.timeInMillis && calFin.timeInMillis > rIni.timeInMillis
-                            }
-                            
-                            val chocaMaquina = reservasDeLaMaquina.any { r ->
-                                val rIni = Calendar.getInstance().apply { time = sdf.parse(r.horaInicio)!! }
-                                val rFin = Calendar.getInstance().apply { time = sdf.parse(r.horaFin)!! }
-                                calInicio.timeInMillis < rFin.timeInMillis && calFin.timeInMillis > rIni.timeInMillis
-                            }
+        val pH = horaSeleccionada.split(":")
+        val hIni = pH[0].toInt(); val mIni = pH[1].toInt()
+        val iniTotalMin = hIni * 60 + mIni
+        val finDefaultMin = (iniTotalMin + 30).coerceAtMost(hIni * 60 + 60)
 
-                            Button(
-                                onClick = {
-                                    maquinaParaReservar?.let { 
-                                        ejecutarReserva(it, fechaSeleccionada, horaSeleccionada, mins) 
-                                    }
-                                    mostrarSelectorTiempo = false
-                                },
-                                enabled = !chocaUsuario && !chocaMaquina,
-                                modifier = Modifier.fillMaxWidth(),
-                                shape = RoundedCornerShape(8.dp),
-                                colors = ButtonDefaults.buttonColors(
-                                    containerColor = if (chocaUsuario) Color(0xFFFFEB3B).copy(0.6f) else BlueAccent,
-                                    disabledContainerColor = Color.LightGray.copy(0.3f)
-                                )
-                            ) {
-                                Text("${mins} minutos", color = if(chocaUsuario) Color.DarkGray else Color.White)
-                            }
-                        }
-                    }
-                }
+        AppTimePickerDialog(
+            onDismiss = { mostrarSelectorTiempo = false },
+            onConfirm = { h, m ->
+                val finTotal = h * 60 + m
+                val dur = if (finTotal <= iniTotalMin) finTotal + 1440 - iniTotalMin else finTotal - iniTotalMin
+                maquinaParaReservar?.let { ejecutarReserva(it, fechaSeleccionada, horaSeleccionada, dur) }
             },
-            confirmButton = {}
+            onValidate = { h, m ->
+                val finTotal = h * 60 + m
+                val finAdj = if (finTotal <= iniTotalMin) finTotal + 1440 else finTotal
+                val dur = finAdj - iniTotalMin
+                if (dur > 60) return@AppTimePickerDialog "Maximo 1 hora por reserva"
+                val chocaMaquina = reservasDeLaMaquina.any { r ->
+                    val p1 = r.horaInicio.split(":"); val rIni = p1[0].toInt() * 60 + p1[1].toInt()
+                    val p2 = r.horaFin.split(":"); val rFin = p2[0].toInt() * 60 + p2[1].toInt()
+                    iniTotalMin < rFin && finAdj > rIni
+                }
+                if (chocaMaquina) return@AppTimePickerDialog "La maquina ya esta ocupada en ese horario"
+                val chocaUser = reservasDelUsuario.any { r ->
+                    val p1 = r.horaInicio.split(":"); val rIni = p1[0].toInt() * 60 + p1[1].toInt()
+                    val p2 = r.horaFin.split(":"); val rFin = p2[0].toInt() * 60 + p2[1].toInt()
+                    iniTotalMin < rFin && finAdj > rIni
+                }
+                if (chocaUser) return@AppTimePickerDialog "Ya tienes una reserva en ese horario"
+                null
+            },
+            title = "Hasta que hora?",
+            initialHour = finDefaultMin / 60,
+            initialMinute = finDefaultMin % 60
         )
     }
 
@@ -555,14 +487,14 @@ fun MaquinasScreen(isAdmin: Boolean, idUsuario: Int, isDarkTheme: Boolean, onBac
         AlertDialog(
             onDismissRequest = { mostrarDialogoAdd = false },
             containerColor = cardBg,
-            title = { Text("Nueva Máquina", color = textColor, fontWeight = FontWeight.Bold) },
+            title = { Text("Nueva Maquina", color = textColor, fontWeight = FontWeight.Bold) },
             text = {
                 Column {
                     OutlinedTextField(value = nuevoNombre, onValueChange = { nuevoNombre = it }, modifier = Modifier.fillMaxWidth(), label = { Text("Nombre") }, colors = dColors)
                     Spacer(Modifier.height(8.dp))
                     OutlinedTextField(value = nuevoTipo, onValueChange = { nuevoTipo = it }, modifier = Modifier.fillMaxWidth(), label = { Text("Tipo") }, colors = dColors)
                     Spacer(Modifier.height(8.dp))
-                    OutlinedTextField(value = nuevaDesc, onValueChange = { nuevaDesc = it }, modifier = Modifier.fillMaxWidth(), label = { Text("Descripción") }, colors = dColors)
+                    OutlinedTextField(value = nuevaDesc, onValueChange = { nuevaDesc = it }, modifier = Modifier.fillMaxWidth(), label = { Text("Descripcion") }, colors = dColors)
                 }
             },
             confirmButton = {
@@ -570,19 +502,11 @@ fun MaquinasScreen(isAdmin: Boolean, idUsuario: Int, isDarkTheme: Boolean, onBac
                     scope.launch {
                         try {
                             val nuevaM = Maquina(id = 0, nombre = nuevoNombre, tipo = nuevoTipo, descripcion = nuevaDesc, operativa = true, estado = 1)
-                            withContext(Dispatchers.IO) {
-                                SupabaseClient.client.from("maquinas").insert(nuevaM)
-                            }
-                            withContext(Dispatchers.Main) { 
-                                mostrarDialogoAdd = false; nuevoNombre = ""; nuevoTipo = ""; nuevaDesc = ""; cargarDatos() 
-                            }
-                        } catch (e: Exception) {
-                            withContext(Dispatchers.Main) {
-                                Toast.makeText(context, "Error al añadir: ${e.message}", Toast.LENGTH_SHORT).show()
-                            }
-                        }
+                            withContext(Dispatchers.IO) { SupabaseClient.client.from(DbTables.MAQUINAS).insert(nuevaM) }
+                            withContext(Dispatchers.Main) { mostrarDialogoAdd = false; nuevoNombre = ""; nuevoTipo = ""; nuevaDesc = ""; cargarDatos() }
+                        } catch (e: Exception) { withContext(Dispatchers.Main) { Toast.makeText(context, "Error al anadir: ${e.message}", Toast.LENGTH_SHORT).show() } }
                     }
-                }, colors = ButtonDefaults.buttonColors(containerColor = BlueAccent)) { Text("Añadir", color = Color.White) }
+                }, colors = ButtonDefaults.buttonColors(containerColor = BlueAccent)) { Text("Anadir", color = Color.White) }
             }
         )
     }

@@ -31,6 +31,9 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.trainium2.models.ReservaConDetalles
+import com.example.trainium2.AppConfig
+import com.example.trainium2.DbColumns
+import com.example.trainium2.DbTables
 import com.example.trainium2.ui.theme.*
 import io.github.jan.supabase.postgrest.from
 import io.github.jan.supabase.postgrest.query.Columns
@@ -42,7 +45,7 @@ import java.util.*
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun ReservasScreen(isAdmin: Boolean, idUsuario: Int, isDarkTheme: Boolean, onBack: () -> Unit) {
+fun ReservasScreen(isAdmin: Boolean, idUsuario: Int, isDarkTheme: Boolean, onToggleTheme: () -> Unit, onBack: () -> Unit) {
     var todasLasReservas by remember { mutableStateOf(listOf<ReservaConDetalles>()) }
     var cargando by remember { mutableStateOf(true) }
     var errorConexion by remember { mutableStateOf(false) }
@@ -51,14 +54,13 @@ fun ReservasScreen(isAdmin: Boolean, idUsuario: Int, isDarkTheme: Boolean, onBac
     var filtroSeleccionado by remember { mutableStateOf("Próximas") }
     var fechaFiltroManual by remember { mutableStateOf("") }
 
-    val hoyStr = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()).format(Date())
+    val hoyStr = AppConfig.FORMAT_ISO_DATE.format(Date())
     val calendar = Calendar.getInstance()
 
     val scope = rememberCoroutineScope()
     val context = LocalContext.current
 
     var headerVisible by remember { mutableStateOf(false) }
-    val headerAlpha by animateFloatAsState(if (headerVisible) 1f else 0f, tween(500), label = "h")
 
     val textColor = if (isDarkTheme) Color.White else BlueDark
     val subtitleColor = if (isDarkTheme) Color.White.copy(0.35f) else BlueDark.copy(0.4f)
@@ -73,10 +75,10 @@ fun ReservasScreen(isAdmin: Boolean, idUsuario: Int, isDarkTheme: Boolean, onBac
             try {
                 val data = withContext(Dispatchers.IO) {
                     val columns = Columns.raw("*, usuarios(*), maquinas(*)")
-                    SupabaseClient.client.from("reservas").select(columns) {
+                    SupabaseClient.client.from(DbTables.RESERVAS).select(columns) {
                         if (!isAdmin) {
                             filter {
-                                eq("id_usuario", idUsuario)
+                                eq(DbColumns.ID_USUARIO, idUsuario)
                             }
                         }
                     }.decodeList<ReservaConDetalles>()
@@ -114,14 +116,20 @@ fun ReservasScreen(isAdmin: Boolean, idUsuario: Int, isDarkTheme: Boolean, onBac
     Box(Modifier.fillMaxSize().background(bgBrush)) {
         Column(Modifier.fillMaxSize().padding(20.dp)) {
             // --- HEADER ---
-            Row(Modifier.fillMaxWidth().statusBarsPadding().alpha(headerAlpha), verticalAlignment = Alignment.CenterVertically) {
-                TextButton(onClick = onBack) { Text("← Volver", color = BlueAccent, fontWeight = FontWeight.Bold) }
-                Column(Modifier.weight(1f)) {
-                    Text("Mis Reservas", fontSize = 22.sp, fontWeight = FontWeight.Bold, color = textColor)
-                    Text(if (isAdmin) "Administración global" else "Tus entrenamientos", fontSize = 12.sp, color = subtitleColor)
-                }
-                IconButton(onClick = { cargarDatos() }) { Icon(Icons.Default.Refresh, null, tint = BlueAccent) }
-            }
+            ScreenHeader(
+                title = "Mis Reservas",
+                subtitle = if (isAdmin) "Administración global" else "Tus entrenamientos",
+                onBack = onBack,
+                trailing = {
+                    IconButton(onClick = { cargarDatos() }) {
+                        Icon(Icons.Default.Refresh, null, tint = BlueAccent)
+                    }
+                },
+                textColor = textColor,
+                subtitleColor = subtitleColor,
+                onToggleTheme = onToggleTheme,
+                darkTheme = isDarkTheme
+            )
 
             Spacer(Modifier.height(16.dp))
 
@@ -205,7 +213,7 @@ fun ReservasScreen(isAdmin: Boolean, idUsuario: Int, isDarkTheme: Boolean, onBac
                                     scope.launch {
                                         try {
                                             withContext(Dispatchers.IO) {
-                                                SupabaseClient.client.from("reservas").delete { filter { eq("id", r.id) } }
+                                                SupabaseClient.client.from(DbTables.RESERVAS).delete { filter { eq(DbColumns.ID, r.id) } }
                                             }
                                             cargarDatos()
                                             Toast.makeText(context, "Reserva cancelada", Toast.LENGTH_SHORT).show()

@@ -36,6 +36,9 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.trainium2.models.PesoUsuario
+import com.example.trainium2.AppConfig
+import com.example.trainium2.DbColumns
+import com.example.trainium2.DbTables
 import com.example.trainium2.ui.theme.*
 import io.github.jan.supabase.postgrest.from
 import kotlinx.coroutines.Dispatchers
@@ -46,7 +49,7 @@ import java.text.SimpleDateFormat
 import java.util.*
 
 @Composable
-fun RegistroScreen(idUsuario: Int, isDarkTheme: Boolean, onBack: () -> Unit) {
+fun RegistroScreen(idUsuario: Int, isDarkTheme: Boolean, onToggleTheme: () -> Unit, onBack: () -> Unit) {
     var registros by remember { mutableStateOf(listOf<PesoUsuario>()) }
     var pesoCampo by remember { mutableStateOf("") }
     var editandoId by remember { mutableStateOf<Int?>(null) }
@@ -55,7 +58,7 @@ fun RegistroScreen(idUsuario: Int, isDarkTheme: Boolean, onBack: () -> Unit) {
     val scope = rememberCoroutineScope()
     val context = LocalContext.current
 
-    val fechaHoy = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()).format(Date())
+    val fechaHoy = AppConfig.FORMAT_ISO_DATE.format(Date())
     val yaExisteHoy = registros.any { it.fecha == fechaHoy }
 
     var visible by remember { mutableStateOf(false) }
@@ -79,7 +82,7 @@ fun RegistroScreen(idUsuario: Int, isDarkTheme: Boolean, onBack: () -> Unit) {
                     SupabaseClient.client.from("peso_usuario")
                         .select {
                             filter {
-                                eq("id_usuario", idUsuario)
+                                eq(DbColumns.ID_USUARIO, idUsuario)
                             }
                         }
                         .decodeList<PesoUsuario>()
@@ -108,14 +111,20 @@ fun RegistroScreen(idUsuario: Int, isDarkTheme: Boolean, onBack: () -> Unit) {
             contentPadding = PaddingValues(top = 20.dp, bottom = 40.dp)
         ) {
             item {
-                Row(Modifier.fillMaxWidth().statusBarsPadding().alpha(alphaAnim), verticalAlignment = Alignment.CenterVertically) {
-                    TextButton(onClick = onBack) { Text("← Volver", color = BlueAccent, fontWeight = FontWeight.Bold) }
-                    Column(Modifier.weight(1f)) {
-                        Text("Progreso", fontSize = 22.sp, fontWeight = FontWeight.Bold, color = textColor)
-                        Text(if (yaExisteHoy) "Registro de hoy completado" else "Añade tu peso de hoy", fontSize = 12.sp, color = subtitleColor)
-                    }
-                    IconButton(onClick = { cargarDatos() }) { Icon(Icons.Default.Refresh, null, tint = BlueAccent) }
-                }
+                ScreenHeader(
+                    title = "Progreso",
+                    subtitle = if (yaExisteHoy) "Registro de hoy completado" else "Añade tu peso de hoy",
+                    onBack = onBack,
+                    trailing = {
+                        IconButton(onClick = { cargarDatos() }) {
+                            Icon(Icons.Default.Refresh, null, tint = BlueAccent)
+                        }
+                    },
+                    textColor = textColor,
+                    subtitleColor = subtitleColor,
+                    onToggleTheme = onToggleTheme,
+                    darkTheme = isDarkTheme
+                )
                 Spacer(Modifier.height(16.dp))
             }
 
@@ -211,9 +220,9 @@ fun RegistroScreen(idUsuario: Int, isDarkTheme: Boolean, onBack: () -> Unit) {
                                                         val rId = reg.id ?: return@launch
                                                         withContext(Dispatchers.IO) {
                                                             SupabaseClient.client.from("peso_usuario").update({
-                                                                set("peso", np)
+                                                                set(DbColumns.PESO, np)
                                                             }) {
-                                                                filter { eq("id", rId) }
+                                                                filter { eq(DbColumns.ID, rId) }
                                                             }
                                                         }
                                                         withContext(Dispatchers.Main) { editandoId = null; cargarDatos() }
@@ -233,7 +242,7 @@ fun RegistroScreen(idUsuario: Int, isDarkTheme: Boolean, onBack: () -> Unit) {
                                                     val rId = reg.id ?: return@launch
                                                     withContext(Dispatchers.IO) {
                                                         SupabaseClient.client.from("peso_usuario").delete {
-                                                            filter { eq("id", rId) }
+                                                            filter { eq(DbColumns.ID, rId) }
                                                         }
                                                     }
                                                     withContext(Dispatchers.Main) { cargarDatos() }

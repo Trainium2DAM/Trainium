@@ -27,6 +27,8 @@ import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.trainium2.models.Usuario
+import com.example.trainium2.DbColumns
+import com.example.trainium2.DbTables
 import com.example.trainium2.ui.theme.*
 import io.github.jan.supabase.postgrest.from
 import kotlinx.coroutines.Dispatchers
@@ -35,7 +37,7 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
 @Composable
-fun ForgotPasswordScreen(isDarkTheme: Boolean, onBack: () -> Unit) {
+fun ForgotPasswordScreen(isDarkTheme: Boolean, onToggleTheme: () -> Unit, onBack: () -> Unit) {
     var dni by remember { mutableStateOf("") }
     var email by remember { mutableStateOf("") }
     var newPass by remember { mutableStateOf("") }
@@ -48,7 +50,6 @@ fun ForgotPasswordScreen(isDarkTheme: Boolean, onBack: () -> Unit) {
     var headerVisible by remember { mutableStateOf(false) }
     var iconVisible by remember { mutableStateOf(false) }
     var formVisible by remember { mutableStateOf(false) }
-    val headerAlpha by animateFloatAsState(if (headerVisible) 1f else 0f, tween(500), label = "h")
     val iconAlpha by animateFloatAsState(if (iconVisible) 1f else 0f, tween(600), label = "i")
     val iconScale by animateFloatAsState(if (iconVisible) 1f else 0.7f, tween(600, easing = FastOutSlowInEasing), label = "is")
     val formAlpha by animateFloatAsState(if (formVisible) 1f else 0f, tween(500), label = "f")
@@ -77,14 +78,15 @@ fun ForgotPasswordScreen(isDarkTheme: Boolean, onBack: () -> Unit) {
 
     Box(Modifier.fillMaxSize().background(bgBrush)) {
         Column(Modifier.fillMaxSize().padding(20.dp)) {
-            // ── Header ──
-            Row(Modifier.fillMaxWidth().statusBarsPadding().alpha(headerAlpha), verticalAlignment = Alignment.CenterVertically) {
-                TextButton(onClick = onBack) { Text("← Volver", color = BlueAccent, fontWeight = FontWeight.Bold) }
-                Column(Modifier.weight(1f)) {
-                    Text("Recuperar Contraseña", fontSize = 22.sp, fontWeight = FontWeight.Bold, color = textColor)
-                    Text(if (step == 1) "Paso 1: Verificación" else "Paso 2: Nueva contraseña", fontSize = 12.sp, color = subtitleColor)
-                }
-            }
+            ScreenHeader(
+                title = "Recuperar Contrasena",
+                subtitle = if (step == 1) "Paso 1: Verificacion" else "Paso 2: Nueva contrasena",
+                onBack = onBack,
+                textColor = textColor,
+                subtitleColor = subtitleColor,
+                onToggleTheme = onToggleTheme,
+                darkTheme = isDarkTheme
+            )
             Spacer(Modifier.height(30.dp))
 
             // ── Lock Icon ──
@@ -128,10 +130,10 @@ fun ForgotPasswordScreen(isDarkTheme: Boolean, onBack: () -> Unit) {
                         try {
                             if (step == 1) {
                                 val user = withContext(Dispatchers.IO) {
-                                    SupabaseClient.client.from("usuarios")
+                                    SupabaseClient.client.from(DbTables.USUARIOS)
                                         .select {
                                             filter {
-                                                eq("dni", dni)
+                                                eq(DbColumns.DNI, dni)
                                                 eq("email", email)
                                             }
                                         }
@@ -157,11 +159,11 @@ fun ForgotPasswordScreen(isDarkTheme: Boolean, onBack: () -> Unit) {
                                 }
 
                                 withContext(Dispatchers.IO) {
-                                    SupabaseClient.client.from("usuarios").update({
+                                    SupabaseClient.client.from(DbTables.USUARIOS).update({
                                         set("contraseniaHash", newPass)
                                     }) {
                                         filter {
-                                            eq("id", idUsuario)
+                                            eq(DbColumns.ID, idUsuario)
                                         }
                                     }
                                 }

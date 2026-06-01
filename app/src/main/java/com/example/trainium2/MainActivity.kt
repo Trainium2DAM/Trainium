@@ -20,6 +20,7 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
+import com.example.trainium2.models.SesionData
 import com.example.trainium2.ui.theme.Trainium2Theme
 import kotlinx.coroutines.launch
 
@@ -29,6 +30,7 @@ class MainActivity : ComponentActivity() {
         WindowCompat.setDecorFitsSystemWindows(window, false)
         setContent {
             val context = LocalContext.current
+            SecureSessionManager.setContext(context)
             val themeManager = remember { ThemeManager(context) }
             val savedDarkMode by themeManager.isDarkMode.collectAsState(initial = null)
             val scope = rememberCoroutineScope()
@@ -62,11 +64,26 @@ class MainActivity : ComponentActivity() {
                         composable("splash") {
                             SplashVideoScreen(
                                 onVideoFinished = {
-                                    navController.navigate("main") {
+                                    navController.navigate("loading") {
                                         popUpTo("splash") { inclusive = true }
                                     }
                                 }
                             )
+                        }
+
+                        composable("loading") {
+                            val sesion = SecureSessionManager.obtenerSesion()
+                            LaunchedEffect(Unit) {
+                                if (sesion != null) {
+                                    navController.navigate(
+                                        "profile/${sesion.userName}/${if (sesion.isAdmin) 1 else 0}/${sesion.userId}/${if (sesion.isPremium) 1 else 0}"
+                                    ) { popUpTo("loading") { inclusive = true } }
+                                } else {
+                                    navController.navigate("main") {
+                                        popUpTo("loading") { inclusive = true }
+                                    }
+                                }
+                            }
                         }
 
                         composable("main") {
@@ -80,6 +97,7 @@ class MainActivity : ComponentActivity() {
                         composable("login") {
                             LoginScreen(
                                 isDarkTheme = isDarkTheme,
+                                onToggleTheme = toggleTheme,
                                 onBack = { navController.popBackStack() },
                                 onNavigateToRegister = { navController.navigate("register") },
                                 onNavigateToForgot = { navController.navigate("forgot") },
@@ -133,6 +151,7 @@ class MainActivity : ComponentActivity() {
                             EditProfileScreen(
                                 idUsuario = id,
                                 isDarkTheme = isDarkTheme,
+                                onToggleTheme = toggleTheme,
                                 onBack = { navController.popBackStack() },
                                 onNavigateToHistorial = { i -> navController.navigate("historial/$i") },
                                 onNavigateToPremium = { navController.navigate("premium_selection/$id") }
@@ -144,7 +163,7 @@ class MainActivity : ComponentActivity() {
                             arguments = listOf(navArgument("idUsuario") { type = NavType.IntType })
                         ) { bse ->
                             val id = bse.arguments?.getInt("idUsuario") ?: 0
-                            HistorialScreen(idUsuario = id, isDarkTheme = isDarkTheme, onBack = { navController.popBackStack() })
+                            HistorialScreen(idUsuario = id, isDarkTheme = isDarkTheme, onToggleTheme = toggleTheme, onBack = { navController.popBackStack() })
                         }
 
                         composable(
@@ -152,7 +171,7 @@ class MainActivity : ComponentActivity() {
                             arguments = listOf(navArgument("idUsuario") { type = NavType.IntType })
                         ) { bse ->
                             val id = bse.arguments?.getInt("idUsuario") ?: 0
-                            PremiumSelectionScreen(idUsuario = id, isDarkTheme = isDarkTheme, onBack = { navController.popBackStack() }, onSuccess = { navController.popBackStack() })
+                            PremiumSelectionScreen(idUsuario = id, isDarkTheme = isDarkTheme, onToggleTheme = toggleTheme, onBack = { navController.popBackStack() }, onSuccess = { navController.popBackStack() })
                         }
 
                         composable(
@@ -164,7 +183,7 @@ class MainActivity : ComponentActivity() {
                         ) { bse ->
                             val admin = bse.arguments?.getInt("isAdmin") == 1
                             val id = bse.arguments?.getInt("idUsuario") ?: 0
-                            MaquinasScreen(isAdmin = admin, idUsuario = id, isDarkTheme = isDarkTheme, onBack = { navController.popBackStack() })
+                            MaquinasScreen(isAdmin = admin, idUsuario = id, isDarkTheme = isDarkTheme, onToggleTheme = toggleTheme, onBack = { navController.popBackStack() })
                         }
 
                         composable(
@@ -172,7 +191,7 @@ class MainActivity : ComponentActivity() {
                             arguments = listOf(navArgument("idUsuario") { type = NavType.IntType })
                         ) { bse ->
                             val id = bse.arguments?.getInt("idUsuario") ?: 0
-                            RegistroScreen(idUsuario = id, isDarkTheme = isDarkTheme, onBack = { navController.popBackStack() })
+                            RegistroScreen(idUsuario = id, isDarkTheme = isDarkTheme, onToggleTheme = toggleTheme, onBack = { navController.popBackStack() })
                         }
 
                         composable(
@@ -184,7 +203,7 @@ class MainActivity : ComponentActivity() {
                         ) { bse ->
                             val admin = bse.arguments?.getInt("isAdmin") == 1
                             val id = bse.arguments?.getInt("idUsuario") ?: 0
-                            ReservasScreen(isAdmin = admin, idUsuario = id, isDarkTheme = isDarkTheme, onBack = { navController.popBackStack() })
+                            ReservasScreen(isAdmin = admin, idUsuario = id, isDarkTheme = isDarkTheme, onToggleTheme = toggleTheme, onBack = { navController.popBackStack() })
                         }
 
                         composable(
@@ -196,11 +215,11 @@ class MainActivity : ComponentActivity() {
                         ) { bse ->
                             val admin = bse.arguments?.getInt("isAdmin") == 1
                             val id = bse.arguments?.getInt("idUsuario") ?: 0
-                            PlatosScreen(isAdmin = admin, idUsuario = id, isDarkTheme = isDarkTheme) { navController.popBackStack() }
+                            PlatosScreen(isAdmin = admin, idUsuario = id, isDarkTheme = isDarkTheme, onToggleTheme = toggleTheme) { navController.popBackStack() }
                         }
                         
-                        composable("register") { RegisterScreen(isDarkTheme = isDarkTheme) { navController.popBackStack() } }
-                        composable("forgot") { ForgotPasswordScreen(isDarkTheme = isDarkTheme) { navController.popBackStack() } }
+                        composable("register") { RegisterScreen(isDarkTheme = isDarkTheme, onToggleTheme = toggleTheme) { navController.popBackStack() } }
+                        composable("forgot") { ForgotPasswordScreen(isDarkTheme = isDarkTheme, onToggleTheme = toggleTheme) { navController.popBackStack() } }
                     }
                 }
             }

@@ -31,6 +31,9 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.trainium2.models.Pago
+import com.example.trainium2.AppConfig
+import com.example.trainium2.DbColumns
+import com.example.trainium2.DbTables
 import com.example.trainium2.ui.theme.*
 import io.github.jan.supabase.postgrest.from
 import kotlinx.coroutines.Dispatchers
@@ -41,7 +44,7 @@ import java.text.SimpleDateFormat
 import java.util.*
 
 @Composable
-fun PremiumSelectionScreen(idUsuario: Int, isDarkTheme: Boolean, onBack: () -> Unit, onSuccess: () -> Unit) {
+fun PremiumSelectionScreen(idUsuario: Int, isDarkTheme: Boolean, onToggleTheme: () -> Unit, onBack: () -> Unit, onSuccess: () -> Unit) {
     var planSeleccionado by remember { mutableStateOf("") }
     var metodoSeleccionado by remember { mutableStateOf("") }
     var numeroTarjeta by remember { mutableStateOf("") }
@@ -68,14 +71,18 @@ fun PremiumSelectionScreen(idUsuario: Int, isDarkTheme: Boolean, onBack: () -> U
 
     Box(Modifier.fillMaxSize().background(bgBrush)) {
         Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(20.dp)) {
-            Row(Modifier.fillMaxWidth().statusBarsPadding().alpha(alphaAnim), verticalAlignment = Alignment.CenterVertically) {
-                TextButton(onClick = onBack) { Text("← Volver", color = BlueAccent, fontWeight = FontWeight.Bold) }
-                Column(Modifier.weight(1f)) {
-                    Text("Hazte Premium", fontSize = 22.sp, fontWeight = FontWeight.Bold, color = textColor)
-                    Text("Entrena sin límites", fontSize = 12.sp, color = subtitleColor)
-                }
-                Icon(Icons.Default.WorkspacePremium, null, tint = Color(0xFFFFD700), modifier = Modifier.padding(end = 4.dp))
-            }
+            ScreenHeader(
+                title = "Hazte Premium",
+                subtitle = "Entrena sin límites",
+                onBack = onBack,
+                trailing = {
+                    Icon(Icons.Default.WorkspacePremium, null, tint = Color(0xFFFFD700), modifier = Modifier.padding(end = 4.dp))
+                },
+                textColor = textColor,
+                subtitleColor = subtitleColor,
+                onToggleTheme = onToggleTheme,
+                darkTheme = isDarkTheme
+            )
 
             Spacer(Modifier.height(30.dp))
 
@@ -143,7 +150,7 @@ fun PremiumSelectionScreen(idUsuario: Int, isDarkTheme: Boolean, onBack: () -> U
                     scope.launch {
                         try {
                             val plan = planes.first { it.first == planSeleccionado }
-                            val sdf = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault())
+                            val sdf = AppConfig.FORMAT_ISO_DATE
                             val hoy = sdf.format(Date())
                             val cal = Calendar.getInstance().apply { add(Calendar.MONTH, plan.third) }
                             val fin = sdf.format(cal.time)
@@ -158,15 +165,15 @@ fun PremiumSelectionScreen(idUsuario: Int, isDarkTheme: Boolean, onBack: () -> U
 
                             withContext(Dispatchers.IO) {
                                 // 1. Registrar pago
-                                SupabaseClient.client.from("pagos").insert(nuevoPago)
+                                SupabaseClient.client.from(DbTables.PAGOS).insert(nuevoPago)
 
                                 // 2. Actualizar estado premium del usuario
-                                SupabaseClient.client.from("usuarios").update({
-                                    set("premium", true)
+                                SupabaseClient.client.from(DbTables.USUARIOS).update({
+                                    set(DbColumns.PREMIUM, true)
                                     set("fecha_ini_prem", hoy)
                                     set("fecha_fin_prem", fin)
                                 }) {
-                                    filter { eq("id", idUsuario) }
+                                    filter { eq(DbColumns.ID, idUsuario) }
                                 }
                             }
 

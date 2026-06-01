@@ -20,12 +20,15 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.Badge
 import androidx.compose.material.icons.filled.Lock
 import androidx.compose.material.icons.filled.Phone
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.PersonAdd
 import androidx.compose.material.icons.filled.Email
+import androidx.compose.material.icons.filled.DarkMode
+import androidx.compose.material.icons.filled.LightMode
 import androidx.compose.material3.Icon
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.foundation.text.KeyboardOptions
@@ -33,6 +36,8 @@ import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.trainium2.models.Usuario
+import com.example.trainium2.DbColumns
+import com.example.trainium2.DbTables
 import com.example.trainium2.ui.theme.*
 import io.github.jan.supabase.postgrest.from
 import kotlinx.coroutines.Dispatchers
@@ -101,7 +106,7 @@ private val PREFIJOS_PAIS = listOf(
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun RegisterScreen(isDarkTheme: Boolean, onBack: () -> Unit) {
+fun RegisterScreen(isDarkTheme: Boolean, onToggleTheme: () -> Unit, onBack: () -> Unit) {
     var nombre by remember { mutableStateOf("") }
     var dni by remember { mutableStateOf("") }
     var email by remember { mutableStateOf("") }
@@ -152,9 +157,21 @@ fun RegisterScreen(isDarkTheme: Boolean, onBack: () -> Unit) {
     }
 
     Box(Modifier.fillMaxSize().background(bgBrush)) {
+        IconButton(
+            onClick = onToggleTheme,
+            modifier = Modifier.align(Alignment.TopEnd).padding(16.dp).statusBarsPadding().padding(top = 8.dp)
+        ) {
+            Icon(
+                if (isDarkTheme) Icons.Default.LightMode else Icons.Default.DarkMode,
+                "Tema",
+                tint = BlueAccent,
+                modifier = Modifier.size(26.dp)
+            )
+        }
+
         Column(Modifier.fillMaxSize().padding(24.dp).verticalScroll(rememberScrollState()), horizontalAlignment = Alignment.CenterHorizontally) {
             TextButton(onClick = onBack, Modifier.align(Alignment.Start).statusBarsPadding()) {
-                Text("← Volver", color = BlueAccent, fontWeight = FontWeight.Bold)
+                Icon(Icons.Default.ArrowBack, contentDescription = "Volver", tint = BlueAccent, modifier = Modifier.size(18.dp))
             }
             Spacer(Modifier.height(8.dp))
 
@@ -255,8 +272,8 @@ fun RegisterScreen(isDarkTheme: Boolean, onBack: () -> Unit) {
                     scope.launch {
                         try {
                             val exists = withContext(Dispatchers.IO) {
-                                SupabaseClient.client.from("usuarios")
-                                    .select { filter { eq("dni", dni) } }
+                                SupabaseClient.client.from(DbTables.USUARIOS)
+                                    .select { filter { eq(DbColumns.DNI, dni) } }
                                     .decodeList<Usuario>().isNotEmpty()
                             }
 
@@ -264,15 +281,15 @@ fun RegisterScreen(isDarkTheme: Boolean, onBack: () -> Unit) {
                                 withContext(Dispatchers.Main) { Toast.makeText(context, "El documento ya está registrado", Toast.LENGTH_SHORT).show() }
                                 } else {
                                 withContext(Dispatchers.IO) {
-                                    SupabaseClient.client.from("usuarios").insert(
+                                    SupabaseClient.client.from(DbTables.USUARIOS).insert(
                                         buildJsonObject {
-                                            put("nombre", nombre)
-                                            put("dni", dni)
+                                            put(DbColumns.NOMBRE, nombre)
+                                            put(DbColumns.DNI, dni)
                                             put("email", email)
                                             put("contraseniaHash", pass)
                                             put("telefono", telefonoFinal)
-                                            put("admin", 0)
-                                            put("premium", false)
+                                            put(DbColumns.ADMIN, 0)
+                                            put(DbColumns.PREMIUM, false)
                                         }
                                     )
                                 }

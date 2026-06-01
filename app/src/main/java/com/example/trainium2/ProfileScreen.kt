@@ -30,8 +30,12 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.trainium2.models.Usuario
+import com.example.trainium2.AppConfig
+import com.example.trainium2.DbColumns
+import com.example.trainium2.DbTables
 import com.example.trainium2.ui.theme.*
 import io.github.jan.supabase.postgrest.from
+import androidx.compose.ui.res.painterResource
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.withContext
@@ -64,23 +68,23 @@ fun ProfileScreen(
     LaunchedEffect(Unit) {
         try {
             val user = withContext(Dispatchers.IO) {
-                SupabaseClient.client.from("usuarios")
-                    .select { filter { eq("id", idUsuario) } }
+                SupabaseClient.client.from(DbTables.USUARIOS)
+                    .select { filter { eq(DbColumns.ID, idUsuario) } }
                     .decodeSingleOrNull<Usuario>()
             }
             usuarioLocal = user
 
             if (!avisoMantenimientoMostradoEnSesion) {
                 // Comprobar si tiene alguna reserva cancelada recientemente por mantenimiento
-                val hoy = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()).format(Date())
+                val hoy = AppConfig.FORMAT_ISO_DATE.format(Date())
                 val canceladas = withContext(Dispatchers.IO) {
                     val columns = io.github.jan.supabase.postgrest.query.Columns.raw("*, maquinas(*)")
-                    SupabaseClient.client.from("reservas")
+                    SupabaseClient.client.from(DbTables.RESERVAS)
                         .select(columns) {
                             filter {
-                                eq("id_usuario", idUsuario)
-                                eq("fecha", hoy)
-                                eq("estado", false)
+                                eq(DbColumns.ID_USUARIO, idUsuario)
+                                eq(DbColumns.FECHA, hoy)
+                                eq(DbColumns.ESTADO, false)
                             }
                         }.decodeList<com.example.trainium2.models.ReservaConDetalles>()
                 }
@@ -116,7 +120,6 @@ fun ProfileScreen(
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
             Row(modifier = Modifier.fillMaxWidth().statusBarsPadding(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
-                Text("TRAINIUM", fontSize = 14.sp, fontWeight = FontWeight.Black, color = BlueAccent, letterSpacing = 2.sp)
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     IconButton(onClick = onToggleTheme) {
                         Icon(if (isDarkTheme) Icons.Default.LightMode else Icons.Default.DarkMode, null, tint = topIconTint)
@@ -126,6 +129,7 @@ fun ProfileScreen(
                         Icon(Icons.Default.Settings, contentDescription = "Ajustes", tint = topIconTint, modifier = Modifier.size(24.dp))
                     }
                 }
+                Image(painter = painterResource(if (isDarkTheme) R.drawable.blanco else R.drawable.negro), contentDescription = "Trainium", modifier = Modifier.height(56.dp))
             }
 
             Spacer(Modifier.height(24.dp))
@@ -174,14 +178,17 @@ fun ProfileScreen(
             }
 
             Spacer(Modifier.height(32.dp))
-            OutlinedButton(
+            Button(
                 onClick = {
                     avisoMantenimientoMostradoEnSesion = false
                     onLogout()
                 },
                 modifier = Modifier.fillMaxWidth().height(52.dp).alpha(buttonsAlpha),
                 shape = RoundedCornerShape(14.dp),
-                border = BorderStroke(1.dp, Color(0xFFFF6B6B).copy(0.5f))
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = Color(0xFFFF6B6B).copy(if (isDarkTheme) 0.25f else 0.15f),
+                    contentColor = Color(0xFFFF6B6B)
+                )
             ) {
                 Icon(Icons.Default.Logout, null, tint = Color(0xFFFF6B6B), modifier = Modifier.size(20.dp))
                 Spacer(Modifier.width(8.dp))

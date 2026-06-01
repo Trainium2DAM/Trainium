@@ -35,6 +35,8 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.trainium2.models.Plato
+import com.example.trainium2.DbColumns
+import com.example.trainium2.DbTables
 import com.example.trainium2.ui.theme.*
 import io.github.jan.supabase.postgrest.from
 import kotlinx.coroutines.Dispatchers
@@ -44,7 +46,7 @@ import kotlinx.coroutines.withContext
 import java.util.Calendar
 
 @Composable
-fun PlatosScreen(isAdmin: Boolean, idUsuario: Int, isDarkTheme: Boolean, onBack: () -> Unit) {
+fun PlatosScreen(isAdmin: Boolean, idUsuario: Int, isDarkTheme: Boolean, onToggleTheme: () -> Unit, onBack: () -> Unit) {
     var listaPlatosAceptados by remember { mutableStateOf(listOf<Plato>()) }
     var indicePlatoActual by remember { mutableIntStateOf(0) }
     var sugerenciasPendientes by remember { mutableStateOf(listOf<Plato>()) }
@@ -79,7 +81,7 @@ fun PlatosScreen(isAdmin: Boolean, idUsuario: Int, isDarkTheme: Boolean, onBack:
 
     val textColor = if (isDarkTheme) Color.White else BlueDark
     val subtitleColor = if (isDarkTheme) Color.White.copy(0.35f) else BlueDark.copy(0.4f)
-    val cardBg = if (isDarkTheme) Color(0xFF162347).copy(0.8f) else Color.White
+    val cardBg = if (isDarkTheme) Color(0xFF162347) else Color.White
 
     val bgBrush = if (isDarkTheme) Brush.verticalGradient(listOf(BlueDark, BlueMid, BlueDeep))
     else Brush.verticalGradient(listOf(Color(0xFFF0F4FF), Color(0xFFE3ECFF), Color(0xFFD6E4FF)))
@@ -92,11 +94,11 @@ fun PlatosScreen(isAdmin: Boolean, idUsuario: Int, isDarkTheme: Boolean, onBack:
             try {
                 // Cargar platos aceptados (visibles)
                 val aceptados = withContext(Dispatchers.IO) {
-                    SupabaseClient.client.from("platos")
+                    SupabaseClient.client.from(DbTables.PLATOS)
                         .select {
                             filter {
-                                eq("visibilidad", true)
-                                eq("aceptado", true)
+                                eq(DbColumns.VISIBILIDAD, true)
+                                eq(DbColumns.ACEPTADO, true)
                             }
                         }
                         .decodeList<Plato>()
@@ -105,9 +107,9 @@ fun PlatosScreen(isAdmin: Boolean, idUsuario: Int, isDarkTheme: Boolean, onBack:
                 // Si es Admin, cargar sugerencias pendientes
                 if (isAdmin) {
                     val pendientes = withContext(Dispatchers.IO) {
-                        SupabaseClient.client.from("platos")
+                        SupabaseClient.client.from(DbTables.PLATOS)
                             .select {
-                                filter { eq("aceptado", false) }
+                                filter { eq(DbColumns.ACEPTADO, false) }
                             }
                             .decodeList<Plato>()
                     }
@@ -155,7 +157,7 @@ fun PlatosScreen(isAdmin: Boolean, idUsuario: Int, isDarkTheme: Boolean, onBack:
                     aceptado = false
                 )
                 withContext(Dispatchers.IO) {
-                    SupabaseClient.client.from("platos").insert(nueva)
+                    SupabaseClient.client.from(DbTables.PLATOS).insert(nueva)
                 }
                 withContext(Dispatchers.Main) {
                     Toast.makeText(context, "Sugerencia enviada al administrador", Toast.LENGTH_LONG).show()
@@ -176,9 +178,9 @@ fun PlatosScreen(isAdmin: Boolean, idUsuario: Int, isDarkTheme: Boolean, onBack:
         scope.launch {
             try {
                 withContext(Dispatchers.IO) {
-                    SupabaseClient.client.from("platos").update({
-                        set("aceptado", true)
-                    }) { filter { eq("id", pId) } }
+                    SupabaseClient.client.from(DbTables.PLATOS).update({
+                        set(DbColumns.ACEPTADO, true)
+                    }) { filter { eq(DbColumns.ID, pId) } }
                 }
                 withContext(Dispatchers.Main) {
                     Toast.makeText(context, "Plato aprobado", Toast.LENGTH_SHORT).show()
@@ -193,7 +195,7 @@ fun PlatosScreen(isAdmin: Boolean, idUsuario: Int, isDarkTheme: Boolean, onBack:
         scope.launch {
             try {
                 withContext(Dispatchers.IO) {
-                    SupabaseClient.client.from("platos").delete { filter { eq("id", pId) } }
+                    SupabaseClient.client.from(DbTables.PLATOS).delete { filter { eq(DbColumns.ID, pId) } }
                 }
                 withContext(Dispatchers.Main) {
                     Toast.makeText(context, "Sugerencia eliminada", Toast.LENGTH_SHORT).show()
@@ -206,14 +208,20 @@ fun PlatosScreen(isAdmin: Boolean, idUsuario: Int, isDarkTheme: Boolean, onBack:
     Box(Modifier.fillMaxSize().background(bgBrush)) {
         Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(20.dp)) {
             // Header
-            Row(Modifier.fillMaxWidth().statusBarsPadding().alpha(alphaAnim), verticalAlignment = Alignment.CenterVertically) {
-                TextButton(onClick = onBack) { Text("← Volver", color = BlueAccent, fontWeight = FontWeight.Bold) }
-                Column(Modifier.weight(1f)) {
-                    Text("Nutrición", fontSize = 24.sp, fontWeight = FontWeight.Bold, color = textColor)
-                    Text("Recomendación diaria", fontSize = 12.sp, color = subtitleColor)
-                }
-                IconButton(onClick = { cargarDatos() }) { Icon(Icons.Default.Refresh, null, tint = BlueAccent) }
-            }
+            ScreenHeader(
+                title = "Nutrición",
+                subtitle = "Recomendación diaria",
+                onBack = onBack,
+                trailing = {
+                    IconButton(onClick = { cargarDatos() }) {
+                        Icon(Icons.Default.Refresh, null, tint = BlueAccent)
+                    }
+                },
+                textColor = textColor,
+                subtitleColor = subtitleColor,
+                onToggleTheme = onToggleTheme,
+                darkTheme = isDarkTheme
+            )
 
             Spacer(Modifier.height(10.dp))
             Button(

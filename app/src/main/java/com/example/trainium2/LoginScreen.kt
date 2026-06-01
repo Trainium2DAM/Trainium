@@ -25,11 +25,16 @@ import androidx.compose.material.icons.filled.Lock
 import androidx.compose.material.icons.filled.Login
 import androidx.compose.material.icons.filled.Key
 import androidx.compose.material.icons.filled.PersonAdd
+import androidx.compose.material.icons.filled.DarkMode
+import androidx.compose.material.icons.filled.LightMode
 import androidx.compose.material3.Icon
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.trainium2.models.Usuario
+import com.example.trainium2.DbColumns
+import com.example.trainium2.DbTables
+import com.example.trainium2.SecureSessionManager
 import com.example.trainium2.ui.theme.*
 import io.github.jan.supabase.postgrest.from
 import kotlinx.coroutines.Dispatchers
@@ -40,6 +45,7 @@ import kotlinx.coroutines.withContext
 @Composable
 fun LoginScreen(
     isDarkTheme: Boolean,
+    onToggleTheme: () -> Unit,
     onBack: () -> Unit,
     onNavigateToRegister: () -> Unit,
     onNavigateToForgot: () -> Unit,
@@ -95,6 +101,18 @@ fun LoginScreen(
     Box(modifier = Modifier.fillMaxSize()) {
         Box(Modifier.fillMaxSize().background(bgOverlay))
 
+        IconButton(
+            onClick = onToggleTheme,
+            modifier = Modifier.align(Alignment.TopEnd).padding(16.dp).statusBarsPadding().padding(top = 8.dp)
+        ) {
+            Icon(
+                if (isDarkTheme) Icons.Default.LightMode else Icons.Default.DarkMode,
+                "Tema",
+                tint = BlueAccent,
+                modifier = Modifier.size(26.dp)
+            )
+        }
+
         Column(
             modifier = Modifier.fillMaxSize().padding(28.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
@@ -148,10 +166,10 @@ fun LoginScreen(
                     scope.launch {
                         try {
                             val user = withContext(Dispatchers.IO) {
-                                SupabaseClient.client.from("usuarios")
+                                SupabaseClient.client.from(DbTables.USUARIOS)
                                     .select {
                                         filter {
-                                            eq("dni", dni)
+                                            eq(DbColumns.DNI, dni)
                                         }
                                     }.decodeSingleOrNull<Usuario>()
                             }
@@ -159,6 +177,7 @@ fun LoginScreen(
                             withContext(Dispatchers.Main) {
                                 if (user != null) {
                                     if (user.contraseniaHash == pass) {
+                                        SecureSessionManager.iniciarSesion(user.id, user.nombre, user.admin == 1, user.premium)
                                         onLoginSuccess(
                                             user.nombre,
                                             user.admin,

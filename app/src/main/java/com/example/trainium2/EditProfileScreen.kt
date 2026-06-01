@@ -22,6 +22,9 @@ import androidx.compose.material.icons.filled.Phone
 import androidx.compose.material.icons.filled.Lock
 import androidx.compose.material.icons.filled.Save
 import androidx.compose.material.icons.filled.CreditCard
+import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.Collections
+import androidx.compose.material.icons.filled.Folder
 import androidx.compose.material3.Icon
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -40,6 +43,8 @@ import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.trainium2.models.Usuario
+import com.example.trainium2.DbColumns
+import com.example.trainium2.DbTables
 import com.example.trainium2.ui.theme.*
 import io.github.jan.supabase.postgrest.from
 import kotlinx.coroutines.Dispatchers
@@ -51,6 +56,7 @@ import kotlinx.coroutines.withContext
 fun EditProfileScreen(
     idUsuario: Int,
     isDarkTheme: Boolean,
+    onToggleTheme: () -> Unit,
     onBack: () -> Unit,
     onNavigateToHistorial: (Int) -> Unit,
     onNavigateToPremium: () -> Unit
@@ -66,9 +72,25 @@ fun EditProfileScreen(
     val scope = rememberCoroutineScope()
     val context = LocalContext.current
 
-    // Launcher para seleccionar imagen de la galería
-    val launcher = rememberLauncherForActivityResult(
+    var mostrarMenuAvatar by remember { mutableStateOf(false) }
+
+    // Launcher para galería
+    val galeriaLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.GetContent()
+    ) { uri: Uri? ->
+        uri?.let {
+            scope.launch {
+                val base64 = withContext(Dispatchers.IO) {
+                    uriToBase64(it, context.contentResolver)
+                }
+                fotoBase64 = base64
+            }
+        }
+    }
+
+    // Launcher para archivos
+    val archivosLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.OpenDocument()
     ) { uri: Uri? ->
         uri?.let {
             scope.launch {
@@ -84,7 +106,6 @@ fun EditProfileScreen(
     var avatarVisible by remember { mutableStateOf(false) }
     var formVisible by remember { mutableStateOf(false) }
     var premiumVisible by remember { mutableStateOf(false) }
-    val headerAlpha by animateFloatAsState(if (headerVisible) 1f else 0f, tween(500), label = "h")
     val avatarAlpha by animateFloatAsState(if (avatarVisible) 1f else 0f, tween(600), label = "av")
     val avatarScale by animateFloatAsState(if (avatarVisible) 1f else 0.8f, tween(600, easing = FastOutSlowInEasing), label = "as")
     val formAlpha by animateFloatAsState(if (formVisible) 1f else 0f, tween(500), label = "f")
@@ -115,10 +136,10 @@ fun EditProfileScreen(
         scope.launch {
             try {
                 val user = withContext(Dispatchers.IO) {
-                    SupabaseClient.client.from("usuarios")
+                    SupabaseClient.client.from(DbTables.USUARIOS)
                         .select {
                             filter {
-                                eq("id", idUsuario)
+                                eq(DbColumns.ID, idUsuario)
                             }
                         }
                         .decodeSingleOrNull<Usuario>()
@@ -147,13 +168,15 @@ fun EditProfileScreen(
 
     Box(Modifier.fillMaxSize().background(bgBrush)) {
         Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(20.dp)) {
-            Row(Modifier.fillMaxWidth().statusBarsPadding().alpha(headerAlpha), verticalAlignment = Alignment.CenterVertically) {
-                TextButton(onClick = onBack) { Text("← Volver", color = BlueAccent, fontWeight = FontWeight.Bold) }
-                Column(Modifier.weight(1f)) {
-                    Text("Ajustes de Perfil", fontSize = 22.sp, fontWeight = FontWeight.Bold, color = textColor)
-                    Text("Edita tu información personal", fontSize = 12.sp, color = subtitleColor)
-                }
-            }
+            ScreenHeader(
+                title = "Ajustes de Perfil",
+                subtitle = "Edita tu informacion personal",
+                onBack = onBack,
+                textColor = textColor,
+                subtitleColor = subtitleColor,
+                onToggleTheme = onToggleTheme,
+                darkTheme = isDarkTheme
+            )
 
             if (cargando) {
                 Box(Modifier.fillMaxWidth().height(300.dp), contentAlignment = Alignment.Center) { CircularProgressIndicator(color = BlueAccent) }
@@ -162,40 +185,74 @@ fun EditProfileScreen(
 
                 // Avatar Clickable
                 Box(Modifier.fillMaxWidth().alpha(avatarAlpha).scale(avatarScale), contentAlignment = Alignment.Center) {
-                    Box(
-                        Modifier
-                            .size(100.dp)
-                            .shadow(8.dp, CircleShape)
-                            .background(Brush.linearGradient(listOf(BlueAccent.copy(0.2f), BlueElectric.copy(0.1f))), CircleShape)
-                            .clip(CircleShape)
-                            .clickable { launcher.launch("image/*") },
-                        contentAlignment = Alignment.Center
-                    ) {
-                        if (!fotoBase64.isNullOrEmpty()) {
-                            val bitmap = decodeBase64ToBitmap(fotoBase64!!)
-                            if (bitmap != null) {
-                                Image(
-                                    bitmap = bitmap.asImageBitmap(),
-                                    contentDescription = "Foto de perfil",
-                                    modifier = Modifier.fillMaxSize(),
-                                    contentScale = ContentScale.Crop
-                                )
+                    Box {
+                        Surface(
+                            modifier = Modifier.size(100.dp).clip(CircleShape),
+                            shape = CircleShape,
+                            shadowElevation = 8.dp,
+                            color = if (isDarkTheme) Color(0xFF1E2D52) else Color(0xFFE8F0FF)
+                        ) {
+                            Box(
+                                modifier = Modifier.fillMaxSize().clip(CircleShape).clickable { mostrarMenuAvatar = true },
+                                contentAlignment = Alignment.Center
+                            ) {
+                            if (!fotoBase64.isNullOrEmpty()) {
+                                val bitmap = decodeBase64ToBitmap(fotoBase64!!)
+                                if (bitmap != null) {
+                                    Image(
+                                        bitmap = bitmap.asImageBitmap(),
+                                        contentDescription = "Foto de perfil",
+                                        modifier = Modifier.fillMaxSize().clip(CircleShape),
+                                        contentScale = ContentScale.Crop
+                                    )
+                                } else {
+                                    Text(if (nombre.isNotEmpty()) nombre.first().uppercaseChar().toString() else "?", fontSize = 36.sp, fontWeight = FontWeight.Bold, color = BlueAccent)
+                                }
                             } else {
                                 Text(if (nombre.isNotEmpty()) nombre.first().uppercaseChar().toString() else "?", fontSize = 36.sp, fontWeight = FontWeight.Bold, color = BlueAccent)
                             }
-                        } else {
-                            Text(if (nombre.isNotEmpty()) nombre.first().uppercaseChar().toString() else "?", fontSize = 36.sp, fontWeight = FontWeight.Bold, color = BlueAccent)
-                        }
 
-                        // Overlay para indicar que se puede editar
-                        Box(Modifier.fillMaxSize().background(Color.Black.copy(0.2f)), contentAlignment = Alignment.BottomCenter) {
-                            Text("EDITAR", color = Color.White, fontSize = 10.sp, fontWeight = FontWeight.Bold, modifier = Modifier.padding(bottom = 8.dp))
+                            // Overlay para indicar que se puede editar
+                            Box(Modifier.matchParentSize().background(Color.Black.copy(0.7f), CircleShape), contentAlignment = Alignment.BottomCenter) {
+                                Text("EDITAR", color = Color.White, fontSize = 10.sp, fontWeight = FontWeight.Bold, modifier = Modifier.padding(bottom = 8.dp))
+                            }
                         }
                     }
-                }
-                Spacer(Modifier.height(24.dp))
 
-                Card(
+                    DropdownMenu(
+                        expanded = mostrarMenuAvatar,
+                        onDismissRequest = { mostrarMenuAvatar = false }
+                    ) {
+                        DropdownMenuItem(
+                            text = { Text("Eliminar foto") },
+                            onClick = {
+                                fotoBase64 = null
+                                mostrarMenuAvatar = false
+                            },
+                            leadingIcon = { Icon(Icons.Default.Delete, null, tint = Color(0xFFFF6B6B)) }
+                        )
+                        DropdownMenuItem(
+                            text = { Text("Galería") },
+                            onClick = {
+                                galeriaLauncher.launch("image/*")
+                                mostrarMenuAvatar = false
+                            },
+                            leadingIcon = { Icon(Icons.Default.Collections, null, tint = BlueAccent) }
+                        )
+                        DropdownMenuItem(
+                            text = { Text("Archivos") },
+                            onClick = {
+                                archivosLauncher.launch(arrayOf("image/*"))
+                                mostrarMenuAvatar = false
+                            },
+                            leadingIcon = { Icon(Icons.Default.Folder, null, tint = BlueAccent) }
+                        )
+                    }
+                }
+            }
+            Spacer(Modifier.height(24.dp))
+
+            Card(
                     modifier = Modifier.fillMaxWidth().alpha(formAlpha).shadow(8.dp, RoundedCornerShape(20.dp)),
                     shape = RoundedCornerShape(20.dp),
                     colors = CardDefaults.cardColors(containerColor = cardBg)
@@ -220,16 +277,16 @@ fun EditProfileScreen(
                         scope.launch {
                             try {
                                 withContext(Dispatchers.IO) {
-                                    SupabaseClient.client.from("usuarios").update({
-                                        set("nombre", nombre)
+                                    SupabaseClient.client.from(DbTables.USUARIOS).update({
+                                        set(DbColumns.NOMBRE, nombre)
                                         set("email", email)
                                         set("telefono", telefono)
-                                        set("foto", fotoBase64)
+                                        set(DbColumns.FOTO, fotoBase64)
                                         if (password.isNotEmpty()) {
                                             set("contraseniaHash", password)
                                         }
                                     }) {
-                                        filter { eq("id", idUsuario) }
+                                        filter { eq(DbColumns.ID, idUsuario) }
                                     }
                                 }
                                 withContext(Dispatchers.Main) {
