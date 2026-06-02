@@ -26,13 +26,15 @@ import androidx.compose.material3.Icon
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.example.trainium2.data.i18n.LocalStrings
 import com.example.trainium2.ui.theme.*
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.trainium2.ui.viewmodel.ForgotPasswordViewModel
 import kotlinx.coroutines.delay
 
 @Composable
-fun ForgotPasswordScreen(isDarkTheme: Boolean, onToggleTheme: () -> Unit, onBack: () -> Unit) {
+fun ForgotPasswordScreen(isDarkTheme: Boolean, onToggleTheme: () -> Unit, onToggleLanguage: () -> Unit, onBack: () -> Unit) {
+    val strings = LocalStrings.current
     val viewModel = viewModel<ForgotPasswordViewModel>()
     val context = LocalContext.current
 
@@ -75,13 +77,14 @@ fun ForgotPasswordScreen(isDarkTheme: Boolean, onToggleTheme: () -> Unit, onBack
     Box(Modifier.fillMaxSize().background(bgBrush)) {
         Column(Modifier.fillMaxSize().padding(20.dp)) {
             ScreenHeader(
-                title = "Recuperar Contrasena",
-                subtitle = if (viewModel.step == 1) "Paso 1: Verificacion" else "Paso 2: Nueva contrasena",
+                title = "Recuperar ${strings.password.lowercase()}",
+                subtitle = if (viewModel.step == 1) String.format(strings.stepFormat, 1) + strings.verifyIdentity.lowercase() else String.format(strings.stepFormat, 2) + strings.newPassword.lowercase(),
                 onBack = onBack,
                 textColor = textColor,
                 subtitleColor = subtitleColor,
                 onToggleTheme = onToggleTheme,
-                darkTheme = isDarkTheme
+                darkTheme = isDarkTheme,
+                onToggleLanguage = onToggleLanguage
             )
             Spacer(Modifier.height(30.dp))
 
@@ -102,17 +105,17 @@ fun ForgotPasswordScreen(isDarkTheme: Boolean, onToggleTheme: () -> Unit, onBack
             ) {
                 Column(Modifier.padding(20.dp)) {
                     if (viewModel.step == 1) {
-                        Text("VERIFICA TU IDENTIDAD", fontSize = 11.sp, color = textColor.copy(0.3f), fontWeight = FontWeight.Bold, letterSpacing = 2.sp)
+                        Text(strings.verifyIdentity, fontSize = 11.sp, color = textColor.copy(0.3f), fontWeight = FontWeight.Bold, letterSpacing = 2.sp)
                         Spacer(Modifier.height(14.dp))
-                        OutlinedTextField(value = viewModel.dni, onValueChange = { viewModel.dni = it }, modifier = Modifier.fillMaxWidth(), label = { Text("DNI") }, singleLine = true, shape = RoundedCornerShape(14.dp), colors = inputColors, leadingIcon = { Icon(Icons.Default.Badge, null, tint = BlueAccent.copy(0.6f)) })
+                        OutlinedTextField(value = viewModel.dni, onValueChange = { viewModel.dni = it }, modifier = Modifier.fillMaxWidth(), label = { Text(strings.dni) }, singleLine = true, shape = RoundedCornerShape(14.dp), colors = inputColors, leadingIcon = { Icon(Icons.Default.Badge, null, tint = BlueAccent.copy(0.6f)) })
                         Spacer(Modifier.height(10.dp))
-                        OutlinedTextField(value = viewModel.email, onValueChange = { viewModel.email = it }, modifier = Modifier.fillMaxWidth(), label = { Text("Email") }, singleLine = true, shape = RoundedCornerShape(14.dp), colors = inputColors, leadingIcon = { Icon(Icons.Default.Email, null, tint = BlueAccent.copy(0.6f)) })
+                        OutlinedTextField(value = viewModel.email, onValueChange = { viewModel.email = it }, modifier = Modifier.fillMaxWidth(), label = { Text(strings.email) }, singleLine = true, shape = RoundedCornerShape(14.dp), colors = inputColors, leadingIcon = { Icon(Icons.Default.Email, null, tint = BlueAccent.copy(0.6f)) })
                     } else {
-                        Text("NUEVA CONTRASEÑA", fontSize = 11.sp, color = textColor.copy(0.3f), fontWeight = FontWeight.Bold, letterSpacing = 2.sp)
+                        Text(strings.newPassword, fontSize = 11.sp, color = textColor.copy(0.3f), fontWeight = FontWeight.Bold, letterSpacing = 2.sp)
                         Spacer(Modifier.height(14.dp))
-                        OutlinedTextField(value = viewModel.newPass, onValueChange = { viewModel.newPass = it }, modifier = Modifier.fillMaxWidth(), label = { Text("Nueva contraseña") }, singleLine = true, visualTransformation = PasswordVisualTransformation(), shape = RoundedCornerShape(14.dp), colors = inputColors, leadingIcon = { Icon(Icons.Default.Lock, null, tint = BlueAccent.copy(0.6f)) })
+                        OutlinedTextField(value = viewModel.newPass, onValueChange = { viewModel.newPass = it }, modifier = Modifier.fillMaxWidth(), label = { Text(strings.password) }, singleLine = true, visualTransformation = PasswordVisualTransformation(), shape = RoundedCornerShape(14.dp), colors = inputColors, leadingIcon = { Icon(Icons.Default.Lock, null, tint = BlueAccent.copy(0.6f)) })
                         Spacer(Modifier.height(10.dp))
-                        OutlinedTextField(value = viewModel.confirmPass, onValueChange = { viewModel.confirmPass = it }, modifier = Modifier.fillMaxWidth(), label = { Text("Confirmar contraseña") }, singleLine = true, visualTransformation = PasswordVisualTransformation(), shape = RoundedCornerShape(14.dp), colors = inputColors, leadingIcon = { Icon(Icons.Default.Lock, null, tint = BlueAccent.copy(0.6f)) })
+                        OutlinedTextField(value = viewModel.confirmPass, onValueChange = { viewModel.confirmPass = it }, modifier = Modifier.fillMaxWidth(), label = { Text(strings.confirmPassword) }, singleLine = true, visualTransformation = PasswordVisualTransformation(), shape = RoundedCornerShape(14.dp), colors = inputColors, leadingIcon = { Icon(Icons.Default.Lock, null, tint = BlueAccent.copy(0.6f)) })
                     }
                 }
             }
@@ -135,7 +138,7 @@ fun ForgotPasswordScreen(isDarkTheme: Boolean, onToggleTheme: () -> Unit, onBack
                     Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.Center) {
                         Icon(if (viewModel.step == 1) Icons.Default.Badge else Icons.Default.LockOpen, null, tint = Color.White, modifier = Modifier.size(18.dp))
                         Spacer(Modifier.width(8.dp))
-                        Text(if (viewModel.step == 1) "Verificar identidad" else "Cambiar contraseña", fontWeight = FontWeight.Bold, color = Color.White, fontSize = 15.sp)
+                        Text(if (viewModel.step == 1) strings.verifyIdentityBtn else strings.changePassword, fontWeight = FontWeight.Bold, color = Color.White, fontSize = 15.sp)
                     }
                 }
             }

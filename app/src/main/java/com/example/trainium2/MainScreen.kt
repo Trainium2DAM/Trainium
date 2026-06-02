@@ -8,6 +8,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowForward
 import androidx.compose.material.icons.filled.DarkMode
+import androidx.compose.material.icons.filled.Language
 import androidx.compose.material.icons.filled.LightMode
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -19,9 +20,9 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.example.trainium2.data.i18n.LocalStrings
 import com.example.trainium2.ui.theme.*
 import kotlinx.coroutines.delay
 
@@ -29,8 +30,11 @@ import kotlinx.coroutines.delay
 fun MainScreen(
     isDarkTheme: Boolean,
     onToggleTheme: () -> Unit,
+    onToggleLanguage: () -> Unit,
     onNavigateToLogin: () -> Unit
 ) {
+    val strings = LocalStrings.current
+
     var logoVisible by remember { mutableStateOf(false) }
     var textVisible by remember { mutableStateOf(false) }
     var featuresVisible by remember { mutableStateOf(false) }
@@ -46,7 +50,6 @@ fun MainScreen(
     val logoScale by animateFloatAsState(if (logoVisible) 1f else 0.5f, tween(900, easing = FastOutSlowInEasing), label = "ls")
     val logoAlpha by animateFloatAsState(if (logoVisible) 1f else 0f, tween(900), label = "la")
     val textAlpha by animateFloatAsState(if (textVisible) 1f else 0f, tween(700), label = "ta")
-    val featAlpha by animateFloatAsState(if (featuresVisible) 1f else 0f, tween(600), label = "fa")
     val btnAlpha by animateFloatAsState(if (buttonVisible) 1f else 0f, tween(600), label = "ba")
     val btnOffset by animateFloatAsState(if (buttonVisible) 0f else 30f, tween(600, easing = FastOutSlowInEasing), label = "bo")
 
@@ -57,12 +60,29 @@ fun MainScreen(
 
     Box(modifier = Modifier.fillMaxSize().background(bg)) {
 
-        // Theme toggle
-        IconButton(
-            onClick = onToggleTheme,
-            modifier = Modifier.align(Alignment.TopEnd).padding(16.dp).statusBarsPadding()
+        Row(
+            modifier = Modifier
+                .align(Alignment.TopEnd)
+                .statusBarsPadding()
+                .padding(end = 8.dp, top = 4.dp),
+            verticalAlignment = Alignment.CenterVertically
         ) {
-            Icon(if (isDarkTheme) Icons.Default.LightMode else Icons.Default.DarkMode, "Tema", tint = if (isDarkTheme) BlueSoft else BlueAccent, modifier = Modifier.size(26.dp))
+            IconButton(onClick = onToggleLanguage) {
+                Icon(
+                    Icons.Default.Language,
+                    contentDescription = strings.language,
+                    tint = if (isDarkTheme) BlueSoft else BlueAccent,
+                    modifier = Modifier.size(24.dp)
+                )
+            }
+            IconButton(onClick = onToggleTheme) {
+                Icon(
+                    if (isDarkTheme) Icons.Default.LightMode else Icons.Default.DarkMode,
+                    contentDescription = strings.theme,
+                    tint = if (isDarkTheme) BlueSoft else BlueAccent,
+                    modifier = Modifier.size(26.dp)
+                )
+            }
         }
 
         Column(
@@ -70,7 +90,6 @@ fun MainScreen(
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.Center
         ) {
-            // ── Logo ──
             Box(contentAlignment = Alignment.Center, modifier = Modifier.scale(logoScale).alpha(logoAlpha)) {
                 Image(
                     painter = painterResource(if (isDarkTheme) R.drawable.blanco else R.drawable.negro),
@@ -81,14 +100,12 @@ fun MainScreen(
 
             Spacer(Modifier.height(16.dp))
 
-            // ── Title ──
             Text("TRAINIUM", fontSize = 38.sp, fontWeight = FontWeight.Black, letterSpacing = 10.sp, color = if (isDarkTheme) Color.White else BlueDark, modifier = Modifier.alpha(textAlpha))
             Spacer(Modifier.height(6.dp))
-            Text("Tu gimnasio, tu ritmo", fontSize = 15.sp, color = if (isDarkTheme) BlueSoft.copy(0.7f) else BlueAccent.copy(0.7f), modifier = Modifier.alpha(textAlpha))
+            Text(strings.appTagline, fontSize = 15.sp, color = if (isDarkTheme) BlueSoft.copy(0.7f) else BlueAccent.copy(0.7f), modifier = Modifier.alpha(textAlpha))
 
             Spacer(Modifier.height(40.dp))
 
-            // ── CTA Button ──
             Button(
                 onClick = onNavigateToLogin,
                 modifier = Modifier.fillMaxWidth(0.82f).height(58.dp).alpha(btnAlpha).offset(y = btnOffset.dp),
@@ -98,7 +115,7 @@ fun MainScreen(
             ) {
                 Box(Modifier.fillMaxSize().background(Brush.horizontalGradient(listOf(BlueAccent, BlueElectric)), RoundedCornerShape(16.dp)), contentAlignment = Alignment.Center) {
                     Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.Center) {
-                        Text("COMENZAR AHORA", fontSize = 15.sp, fontWeight = FontWeight.Bold, letterSpacing = 2.sp, color = Color.White)
+                        Text(strings.startNow, fontSize = 15.sp, fontWeight = FontWeight.Bold, letterSpacing = 2.sp, color = Color.White)
                         Spacer(Modifier.width(10.dp))
                         Icon(Icons.Default.ArrowForward, null, tint = Color.White, modifier = Modifier.size(18.dp))
                     }

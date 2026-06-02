@@ -17,7 +17,7 @@ class ReservasViewModel : ViewModel() {
     var todasLasReservas by mutableStateOf<List<ReservaConDetalles>>(emptyList())
     var isLoading by mutableStateOf(false)
     var error by mutableStateOf<String?>(null)
-    var filtroSeleccionado by mutableStateOf("Pr\u00f3ximas")
+    var filtroSeleccionado by mutableStateOf("upcoming")
     var fechaFiltroManual by mutableStateOf("")
 
     fun loadReservations(isAdmin: Boolean, userId: Int) {
@@ -59,9 +59,9 @@ class ReservasViewModel : ViewModel() {
     fun getFilteredReservations(): List<ReservaConDetalles> {
         val hoy = AppConfig.FORMAT_ISO_DATE.format(Date())
         return when (filtroSeleccionado) {
-            "Hoy" -> todasLasReservas.filter { it.fecha == hoy }
-            "Próximas" -> todasLasReservas.filter { it.fecha >= hoy }
-            "Fecha" -> todasLasReservas.filter { it.fecha == fechaFiltroManual }
+            "today" -> todasLasReservas.filter { it.fecha == hoy }
+            "upcoming" -> todasLasReservas.filter { it.fecha >= hoy }
+            "date" -> todasLasReservas.filter { it.fecha == fechaFiltroManual }
             else -> todasLasReservas
         }.sortedWith(compareBy({ it.fecha }, { it.horaInicio }))
     }

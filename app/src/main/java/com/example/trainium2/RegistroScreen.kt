@@ -35,13 +35,15 @@ import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.trainium2.models.PesoUsuario
 import com.example.trainium2.AppConfig
+import com.example.trainium2.data.i18n.LocalStrings
 import com.example.trainium2.ui.theme.*
 import com.example.trainium2.ui.viewmodel.RegistroViewModel
 import kotlinx.coroutines.delay
 import java.util.*
 
 @Composable
-fun RegistroScreen(userId: Int, darkTheme: Boolean, onToggleTheme: () -> Unit, onBack: () -> Unit) {
+fun RegistroScreen(userId: Int, darkTheme: Boolean, onToggleTheme: () -> Unit, onToggleLanguage: () -> Unit, onBack: () -> Unit) {
+    val strings = LocalStrings.current
     val viewModel = viewModel<RegistroViewModel>()
 
     val fechaHoy = AppConfig.FORMAT_ISO_DATE.format(Date())
@@ -68,8 +70,8 @@ fun RegistroScreen(userId: Int, darkTheme: Boolean, onToggleTheme: () -> Unit, o
         ) {
             item {
                 ScreenHeader(
-                    title = "Progreso",
-                    subtitle = if (viewModel.yaExisteHoy) "Registro de hoy completado" else "Añade tu peso de hoy",
+                    title = strings.weightRecord,
+                    subtitle = if (viewModel.yaExisteHoy) strings.subtitleWeightToday else strings.subtitleWeightAdd,
                     onBack = onBack,
                     trailing = {
                         IconButton(onClick = { viewModel.loadRegistros(userId) }) {
@@ -79,7 +81,8 @@ fun RegistroScreen(userId: Int, darkTheme: Boolean, onToggleTheme: () -> Unit, o
                     textColor = textColor,
                     subtitleColor = subtitleColor,
                     onToggleTheme = onToggleTheme,
-                    darkTheme = darkTheme
+                    darkTheme = darkTheme,
+                    onToggleLanguage = onToggleLanguage
                 )
                 Spacer(Modifier.height(16.dp))
             }
@@ -94,7 +97,7 @@ fun RegistroScreen(userId: Int, darkTheme: Boolean, onToggleTheme: () -> Unit, o
                         Row(Modifier.padding(16.dp), verticalAlignment = Alignment.CenterVertically) {
                             OutlinedTextField(
                                 value = viewModel.pesoCampo, onValueChange = { viewModel.pesoCampo = it },
-                                modifier = Modifier.weight(1f), label = { Text("Peso actual (kg)") },
+                                modifier = Modifier.weight(1f), label = { Text(strings.currentWeight) },
                                 shape = RoundedCornerShape(14.dp),
                                 colors = OutlinedTextFieldDefaults.colors(
                                     focusedTextColor = textColor, unfocusedTextColor = textColor,
@@ -126,7 +129,7 @@ fun RegistroScreen(userId: Int, darkTheme: Boolean, onToggleTheme: () -> Unit, o
                 }
             } else {
                 item {
-                    Text("HISTORIAL", fontSize = 11.sp, fontWeight = FontWeight.Bold, color = textColor.copy(0.3f), letterSpacing = 3.sp)
+                    Text(strings.history, fontSize = 11.sp, fontWeight = FontWeight.Bold, color = textColor.copy(0.3f), letterSpacing = 3.sp)
                     Spacer(Modifier.height(12.dp))
                 }
 
@@ -155,7 +158,7 @@ fun RegistroScreen(userId: Int, darkTheme: Boolean, onToggleTheme: () -> Unit, o
                                             OutlinedTextField(value = viewModel.editandoPeso, onValueChange = { viewModel.editandoPeso = it }, modifier = Modifier.width(90.dp), singleLine = true, colors = OutlinedTextFieldDefaults.colors(focusedTextColor = textColor))
                                         } else {
                                             Text("${reg.peso} kg", fontWeight = FontWeight.Bold, color = textColor, fontSize = 18.sp)
-                                            Text(if (esHoy) "Hoy" else reg.fecha, fontSize = 12.sp, color = textColor.copy(0.4f))
+                                            Text(if (esHoy) strings.today else reg.fecha, fontSize = 12.sp, color = textColor.copy(0.4f))
                                         }
                                     }
 
@@ -179,7 +182,7 @@ fun RegistroScreen(userId: Int, darkTheme: Boolean, onToggleTheme: () -> Unit, o
                 if (viewModel.registros.isNotEmpty()) {
                     item {
                         Spacer(Modifier.height(30.dp))
-                        Text("GRÁFICA DE EVOLUCIÓN", fontSize = 11.sp, fontWeight = FontWeight.Bold, color = textColor.copy(0.3f), letterSpacing = 3.sp)
+                        Text(strings.evolutionChart, fontSize = 11.sp, fontWeight = FontWeight.Bold, color = textColor.copy(0.3f), letterSpacing = 3.sp)
                         Spacer(Modifier.height(16.dp))
                         GraficaPeso(viewModel.registros, darkTheme)
                         Spacer(Modifier.height(20.dp))
@@ -192,10 +195,11 @@ fun RegistroScreen(userId: Int, darkTheme: Boolean, onToggleTheme: () -> Unit, o
 
 @Composable
 fun GraficaPeso(registros: List<PesoUsuario>, isDark: Boolean) {
+    val strings = LocalStrings.current
     val data = remember(registros) { registros.reversed() } // Orden cronológico memorizado
     if (data.size < 2) {
         Box(Modifier.fillMaxWidth().height(150.dp).background(if(isDark) Color.White.copy(0.05f) else Color.Black.copy(0.05f), RoundedCornerShape(16.dp)), contentAlignment = Alignment.Center) {
-            Text("Se necesitan al menos 2 registros para mostrar la gráfica", color = (if(isDark) Color.White else Color.Black).copy(0.4f), fontSize = 12.sp, textAlign = TextAlign.Center)
+            Text(strings.needTwoRecords, color = (if(isDark) Color.White else Color.Black).copy(0.4f), fontSize = 12.sp, textAlign = TextAlign.Center)
         }
         return
     }

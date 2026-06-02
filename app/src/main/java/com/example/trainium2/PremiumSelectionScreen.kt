@@ -31,6 +31,7 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.example.trainium2.data.i18n.LocalStrings
 import com.example.trainium2.ui.theme.*
 import com.example.trainium2.ui.viewmodel.PremiumSelectionViewModel
 import kotlinx.coroutines.delay
@@ -40,9 +41,11 @@ fun PremiumSelectionScreen(
     userId: Int,
     darkTheme: Boolean,
     onToggleTheme: () -> Unit,
+    onToggleLanguage: () -> Unit,
     onBack: () -> Unit,
     onSuccess: () -> Unit
 ) {
+    val strings = LocalStrings.current
     val viewModel = viewModel<PremiumSelectionViewModel>()
     val context = LocalContext.current
     var visible by remember { mutableStateOf(false) }
@@ -58,8 +61,8 @@ fun PremiumSelectionScreen(
     Box(Modifier.fillMaxSize().background(bgBrush)) {
         Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(horizontal = 20.dp)) {
             ScreenHeader(
-                title = "Hazte Premium",
-                subtitle = "Entrena sin límites",
+                title = strings.premiumPlans,
+                subtitle = strings.subtitlePremium,
                 onBack = onBack,
                 trailing = {
                     Icon(Icons.Default.WorkspacePremium, null, tint = Color(0xFFFFD700), modifier = Modifier.padding(end = 4.dp))
@@ -67,7 +70,8 @@ fun PremiumSelectionScreen(
                 textColor = textColor,
                 subtitleColor = subtitleColor,
                 onToggleTheme = onToggleTheme,
-                darkTheme = darkTheme
+                darkTheme = darkTheme,
+                onToggleLanguage = onToggleLanguage
             )
 
             Spacer(Modifier.height(30.dp))
@@ -88,7 +92,7 @@ fun PremiumSelectionScreen(
                         Spacer(Modifier.width(14.dp))
                         Column(Modifier.weight(1f)) {
                             Text(plan.nombre, fontWeight = FontWeight.Bold, color = textColor, fontSize = 18.sp)
-                            Text("${plan.meses} ${if (plan.meses == 1) "mes" else "meses"}", color = textColor.copy(0.5f))
+                            Text("${plan.meses} ${if (plan.meses == 1) strings.month else strings.months}", color = textColor.copy(0.5f))
                         }
                         Text("${plan.precio}€", fontSize = 24.sp, fontWeight = FontWeight.Bold, color = BlueAccent)
                         if (isSelected) {
@@ -100,9 +104,9 @@ fun PremiumSelectionScreen(
             }
 
             Spacer(Modifier.height(24.dp))
-            Text("MÉTODO DE PAGO", fontSize = 11.sp, color = textColor.copy(0.3f), fontWeight = FontWeight.Bold, letterSpacing = 3.sp)
+            Text(strings.paymentMethod, fontSize = 11.sp, color = textColor.copy(0.3f), fontWeight = FontWeight.Bold, letterSpacing = 3.sp)
             Row(Modifier.padding(vertical = 12.dp), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                listOf("Tarjeta de crédito" to Icons.Default.CreditCard, "PayPal" to Icons.Default.Payments).forEach { (metodo, icon) ->
+                listOf(strings.creditCard to Icons.Default.CreditCard, "PayPal" to Icons.Default.Payments).forEach { (metodo, icon) ->
                     val isSelected = viewModel.metodoSeleccionado == metodo
                     Button(
                         onClick = { viewModel.metodoSeleccionado = metodo },
@@ -117,12 +121,12 @@ fun PremiumSelectionScreen(
                 }
             }
 
-            if (viewModel.metodoSeleccionado == "Tarjeta de crédito") {
+            if (viewModel.metodoSeleccionado == strings.creditCard) {
                 val dColors = OutlinedTextFieldDefaults.colors(focusedTextColor = textColor, unfocusedTextColor = textColor, focusedBorderColor = BlueAccent, unfocusedBorderColor = textColor.copy(0.2f), focusedLabelColor = BlueAccent)
-                OutlinedTextField(value = viewModel.numeroTarjeta, onValueChange = { if (it.length <= 16) viewModel.numeroTarjeta = it }, modifier = Modifier.fillMaxWidth(), label = { Text("Número de tarjeta") }, keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number), colors = dColors)
+                OutlinedTextField(value = viewModel.numeroTarjeta, onValueChange = { if (it.length <= 16) viewModel.numeroTarjeta = it }, modifier = Modifier.fillMaxWidth(), label = { Text(strings.cardNumber) }, keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number), colors = dColors)
                 Spacer(Modifier.height(10.dp))
                 Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                    OutlinedTextField(value = viewModel.fechaVencimiento, onValueChange = { input -> val clean = input.replace("/", "").filter { it.isDigit() }; if (clean.length <= 4) { viewModel.fechaVencimiento = if (clean.length >= 3) "${clean.substring(0, 2)}/${clean.substring(2)}" else clean } }, modifier = Modifier.weight(1f), label = { Text("MM/AA") }, keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number), colors = dColors)
+                    OutlinedTextField(value = viewModel.fechaVencimiento, onValueChange = { input -> val clean = input.replace("/", "").filter { it.isDigit() }; if (clean.length <= 4) { viewModel.fechaVencimiento = if (clean.length >= 3) "${clean.substring(0, 2)}/${clean.substring(2)}" else clean } }, modifier = Modifier.weight(1f), label = { Text(strings.expiryDate) }, keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number), colors = dColors)
                     OutlinedTextField(value = viewModel.cvv, onValueChange = { if (it.length <= 3) viewModel.cvv = it }, modifier = Modifier.weight(0.6f), label = { Text("CVV") }, keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number), colors = dColors)
                 }
             }
@@ -132,7 +136,7 @@ fun PremiumSelectionScreen(
             Button(
                 onClick = {
                     viewModel.purchase(userId) {
-                        Toast.makeText(context, "¡Ya eres Premium!", Toast.LENGTH_LONG).show()
+                        Toast.makeText(context, strings.nowPremium, Toast.LENGTH_LONG).show()
                         onSuccess()
                     }
                 },
@@ -145,7 +149,7 @@ fun PremiumSelectionScreen(
                     Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.Center) {
                         Icon(Icons.Default.CheckCircle, null, tint = Color.White, modifier = Modifier.size(18.dp))
                         Spacer(Modifier.width(8.dp))
-                        Text("CONFIRMAR PAGO", fontWeight = FontWeight.Bold, color = Color.White)
+                        Text(strings.confirmPayment, fontWeight = FontWeight.Bold, color = Color.White)
                     }
                 }
             }

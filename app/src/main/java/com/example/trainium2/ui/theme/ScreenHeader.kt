@@ -6,6 +6,7 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.DarkMode
+import androidx.compose.material.icons.filled.Language
 import androidx.compose.material.icons.filled.LightMode
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
@@ -28,12 +29,16 @@ fun ScreenHeader(
     textColor: Color,
     subtitleColor: Color,
     onToggleTheme: (() -> Unit)? = null,
-    darkTheme: Boolean? = null
+    darkTheme: Boolean? = null,
+    onToggleLanguage: (() -> Unit)? = null
 ) {
     val headerAlpha by animateFloatAsState(if (visible) 1f else 0f, tween(500), label = "h")
 
     Row(
-        modifier = Modifier.fillMaxWidth().statusBarsPadding().alpha(headerAlpha),
+        modifier = Modifier
+            .fillMaxWidth()
+            .statusBarsPadding()
+            .alpha(headerAlpha),
         verticalAlignment = Alignment.CenterVertically
     ) {
         if (onBack != null) {
@@ -50,11 +55,21 @@ fun ScreenHeader(
             Text(title, fontSize = 22.sp, fontWeight = FontWeight.Bold, color = textColor)
             Text(subtitle, fontSize = 12.sp, color = subtitleColor)
         }
+        if (onToggleLanguage != null) {
+            IconButton(onClick = onToggleLanguage) {
+                Icon(
+                    Icons.Default.Language,
+                    contentDescription = null,
+                    tint = BlueAccent,
+                    modifier = Modifier.size(22.dp)
+                )
+            }
+        }
         if (darkTheme != null && onToggleTheme != null) {
             IconButton(onClick = onToggleTheme) {
                 Icon(
                     if (darkTheme) Icons.Default.LightMode else Icons.Default.DarkMode,
-                    contentDescription = "Tema",
+                    contentDescription = null,
                     tint = BlueAccent
                 )
             }

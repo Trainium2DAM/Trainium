@@ -33,6 +33,7 @@ import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.example.trainium2.data.i18n.LocalStrings
 import com.example.trainium2.ui.theme.*
 import com.example.trainium2.ui.viewmodel.EditProfileViewModel
 import kotlinx.coroutines.delay
@@ -44,34 +45,21 @@ fun EditProfileScreen(
     isPremium: Boolean,
     darkTheme: Boolean,
     onToggleTheme: () -> Unit,
+    onToggleLanguage: () -> Unit,
     onNavigateToProfile: () -> Unit,
     onNavigateToHistorial: () -> Unit,
     onNavigateToPremium: () -> Unit
 ) {
+    val strings = LocalStrings.current
     val viewModel = viewModel<EditProfileViewModel>()
     val scope = rememberCoroutineScope()
     val context = LocalContext.current
 
-    val galeriaLauncher = rememberLauncherForActivityResult(
-        contract = ActivityResultContracts.GetContent()
-    ) { uri: Uri? ->
-        uri?.let {
-            scope.launch {
-                val base64 = uriToBase64(it, context.contentResolver)
-                viewModel.setFoto(base64)
-            }
-        }
+    val galeriaLauncher = rememberLauncherForActivityResult(ActivityResultContracts.GetContent()) { uri: Uri? ->
+        uri?.let { scope.launch { val base64 = uriToBase64(it, context.contentResolver); viewModel.setFoto(base64) } }
     }
-
-    val archivosLauncher = rememberLauncherForActivityResult(
-        contract = ActivityResultContracts.OpenDocument()
-    ) { uri: Uri? ->
-        uri?.let {
-            scope.launch {
-                val base64 = uriToBase64(it, context.contentResolver)
-                viewModel.setFoto(base64)
-            }
-        }
+    val archivosLauncher = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) { uri: Uri? ->
+        uri?.let { scope.launch { val base64 = uriToBase64(it, context.contentResolver); viewModel.setFoto(base64) } }
     }
 
     var headerVisible by remember { mutableStateOf(false) }
@@ -97,11 +85,10 @@ fun EditProfileScreen(
         unfocusedTextColor = textColor.copy(0.9f)
     )
 
-    val bgBrush = if (darkTheme) {
+    val bgBrush = if (darkTheme)
         Brush.verticalGradient(listOf(BlueDark, BlueMid, BlueDeep))
-    } else {
+    else
         Brush.verticalGradient(listOf(Color(0xFFF0F4FF), Color(0xFFE3ECFF), Color(0xFFD6E4FF)))
-    }
 
     LaunchedEffect(Unit) {
         delay(80); headerVisible = true
@@ -109,21 +96,19 @@ fun EditProfileScreen(
         delay(150); formVisible = true
         delay(150); premiumVisible = true
     }
-
-    LaunchedEffect(userId) {
-        viewModel.loadUser(userId)
-    }
+    LaunchedEffect(userId) { viewModel.loadUser(userId) }
 
     Box(Modifier.fillMaxSize().background(bgBrush)) {
         Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(20.dp)) {
             ScreenHeader(
-                title = "Ajustes de Perfil",
-                subtitle = "Edita tu informacion personal",
+                title = strings.editProfile,
+                subtitle = strings.personalInfo,
                 onBack = onNavigateToProfile,
                 textColor = textColor,
                 subtitleColor = subtitleColor,
                 onToggleTheme = onToggleTheme,
-                darkTheme = darkTheme
+                darkTheme = darkTheme,
+                onToggleLanguage = onToggleLanguage
             )
 
             if (viewModel.isLoading) {
@@ -150,56 +135,39 @@ fun EditProfileScreen(
                                 if (!viewModel.fotoBase64.isNullOrEmpty()) {
                                     val bitmap = decodeBase64ToBitmap(viewModel.fotoBase64!!)
                                     if (bitmap != null) {
-                                        Image(
-                                            bitmap = bitmap.asImageBitmap(),
-                                            contentDescription = "Foto de perfil",
-                                            modifier = Modifier.fillMaxSize().clip(CircleShape),
-                                            contentScale = ContentScale.Crop
-                                        )
+                                        Image(bitmap = bitmap.asImageBitmap(), contentDescription = null, modifier = Modifier.fillMaxSize().clip(CircleShape), contentScale = ContentScale.Crop)
                                     } else {
                                         Text(if (viewModel.nombre.isNotEmpty()) viewModel.nombre.first().uppercaseChar().toString() else "?", fontSize = 36.sp, fontWeight = FontWeight.Bold, color = BlueAccent)
                                     }
                                 } else {
                                     Text(if (viewModel.nombre.isNotEmpty()) viewModel.nombre.first().uppercaseChar().toString() else "?", fontSize = 36.sp, fontWeight = FontWeight.Bold, color = BlueAccent)
                                 }
-
                                 Box(Modifier.matchParentSize().background(Color.Black.copy(0.7f), CircleShape), contentAlignment = Alignment.BottomCenter) {
-                                    Text("EDITAR", color = Color.White, fontSize = 10.sp, fontWeight = FontWeight.Bold, modifier = Modifier.padding(bottom = 8.dp))
+                                    Text(strings.edit, color = Color.White, fontSize = 10.sp, fontWeight = FontWeight.Bold, modifier = Modifier.padding(bottom = 8.dp))
                                 }
                             }
                         }
 
-                        DropdownMenu(
-                            expanded = viewModel.avatarMenuExpanded,
-                            onDismissRequest = { viewModel.avatarMenuExpanded = false }
-                        ) {
+                        DropdownMenu(expanded = viewModel.avatarMenuExpanded, onDismissRequest = { viewModel.avatarMenuExpanded = false }) {
                             DropdownMenuItem(
-                                text = { Text("Eliminar foto") },
-                                onClick = {
-                                    viewModel.deleteFoto()
-                                    viewModel.avatarMenuExpanded = false
-                                },
+                                text = { Text(strings.deletePhoto) },
+                                onClick = { viewModel.deleteFoto(); viewModel.avatarMenuExpanded = false },
                                 leadingIcon = { Icon(Icons.Default.Delete, null, tint = Color(0xFFFF6B6B)) }
                             )
                             DropdownMenuItem(
-                                text = { Text("Galería") },
-                                onClick = {
-                                    galeriaLauncher.launch("image/*")
-                                    viewModel.avatarMenuExpanded = false
-                                },
+                                text = { Text(strings.gallery) },
+                                onClick = { galeriaLauncher.launch("image/*"); viewModel.avatarMenuExpanded = false },
                                 leadingIcon = { Icon(Icons.Default.Collections, null, tint = BlueAccent) }
                             )
                             DropdownMenuItem(
-                                text = { Text("Archivos") },
-                                onClick = {
-                                    archivosLauncher.launch(arrayOf("image/*"))
-                                    viewModel.avatarMenuExpanded = false
-                                },
+                                text = { Text(strings.files) },
+                                onClick = { archivosLauncher.launch(arrayOf("image/*")); viewModel.avatarMenuExpanded = false },
                                 leadingIcon = { Icon(Icons.Default.Folder, null, tint = BlueAccent) }
                             )
                         }
                     }
                 }
+
                 Spacer(Modifier.height(24.dp))
 
                 Card(
@@ -208,15 +176,15 @@ fun EditProfileScreen(
                     colors = CardDefaults.cardColors(containerColor = cardBg)
                 ) {
                     Column(Modifier.padding(20.dp)) {
-                        Text("INFORMACIÓN PERSONAL", fontSize = 11.sp, color = textColor.copy(0.3f), fontWeight = FontWeight.Bold, letterSpacing = 2.sp)
+                        Text(strings.personalInfo, fontSize = 11.sp, color = textColor.copy(0.3f), fontWeight = FontWeight.Bold, letterSpacing = 2.sp)
                         Spacer(Modifier.height(14.dp))
-                        OutlinedTextField(value = viewModel.nombre, onValueChange = { viewModel.nombre = it }, modifier = Modifier.fillMaxWidth(), label = { Text("Nombre completo") }, singleLine = true, shape = RoundedCornerShape(14.dp), colors = inputColors, leadingIcon = { Icon(Icons.Default.Person, null, tint = BlueAccent.copy(0.6f)) })
+                        OutlinedTextField(value = viewModel.nombre, onValueChange = { viewModel.nombre = it }, modifier = Modifier.fillMaxWidth(), label = { Text(strings.fullName) }, singleLine = true, shape = RoundedCornerShape(14.dp), colors = inputColors, leadingIcon = { Icon(Icons.Default.Person, null, tint = BlueAccent.copy(0.6f)) })
                         Spacer(Modifier.height(10.dp))
-                        OutlinedTextField(value = viewModel.email, onValueChange = { viewModel.email = it }, modifier = Modifier.fillMaxWidth(), label = { Text("Email") }, singleLine = true, shape = RoundedCornerShape(14.dp), colors = inputColors, leadingIcon = { Icon(Icons.Default.Email, null, tint = BlueAccent.copy(0.6f)) })
+                        OutlinedTextField(value = viewModel.email, onValueChange = { viewModel.email = it }, modifier = Modifier.fillMaxWidth(), label = { Text(strings.email) }, singleLine = true, shape = RoundedCornerShape(14.dp), colors = inputColors, leadingIcon = { Icon(Icons.Default.Email, null, tint = BlueAccent.copy(0.6f)) })
                         Spacer(Modifier.height(10.dp))
-                        OutlinedTextField(value = viewModel.telefono, onValueChange = { viewModel.telefono = it }, modifier = Modifier.fillMaxWidth(), label = { Text("Teléfono") }, singleLine = true, shape = RoundedCornerShape(14.dp), colors = inputColors, leadingIcon = { Icon(Icons.Default.Phone, null, tint = BlueAccent.copy(0.6f)) })
+                        OutlinedTextField(value = viewModel.telefono, onValueChange = { viewModel.telefono = it }, modifier = Modifier.fillMaxWidth(), label = { Text(strings.phone) }, singleLine = true, shape = RoundedCornerShape(14.dp), colors = inputColors, leadingIcon = { Icon(Icons.Default.Phone, null, tint = BlueAccent.copy(0.6f)) })
                         Spacer(Modifier.height(10.dp))
-                        OutlinedTextField(value = viewModel.password, onValueChange = { viewModel.password = it }, modifier = Modifier.fillMaxWidth(), label = { Text("Nueva contraseña (opcional)") }, singleLine = true, visualTransformation = PasswordVisualTransformation(), shape = RoundedCornerShape(14.dp), colors = inputColors, leadingIcon = { Icon(Icons.Default.Lock, null, tint = BlueAccent.copy(0.6f)) })
+                        OutlinedTextField(value = viewModel.password, onValueChange = { viewModel.password = it }, modifier = Modifier.fillMaxWidth(), label = { Text(strings.newPasswordOptional) }, singleLine = true, visualTransformation = PasswordVisualTransformation(), shape = RoundedCornerShape(14.dp), colors = inputColors, leadingIcon = { Icon(Icons.Default.Lock, null, tint = BlueAccent.copy(0.6f)) })
                     }
                 }
 
@@ -225,14 +193,16 @@ fun EditProfileScreen(
                 Button(
                     onClick = {
                         viewModel.saveUser(userId) {
-                            Toast.makeText(context, "Perfil actualizado", Toast.LENGTH_SHORT).show()
+                            Toast.makeText(context, strings.profileUpdated, Toast.LENGTH_SHORT).show()
                         }
                     },
                     modifier = Modifier.fillMaxWidth().height(54.dp).alpha(formAlpha).shadow(12.dp, RoundedCornerShape(16.dp)),
-                    shape = RoundedCornerShape(16.dp), colors = ButtonDefaults.buttonColors(containerColor = Color.Transparent), contentPadding = PaddingValues()
+                    shape = RoundedCornerShape(16.dp),
+                    colors = ButtonDefaults.buttonColors(containerColor = Color.Transparent),
+                    contentPadding = PaddingValues()
                 ) {
                     Box(Modifier.fillMaxSize().background(Brush.horizontalGradient(listOf(BlueAccent, BlueElectric)), RoundedCornerShape(16.dp)), contentAlignment = Alignment.Center) {
-                        Text("Guardar cambios", fontWeight = FontWeight.Bold, color = Color.White, fontSize = 15.sp)
+                        Text(strings.saveChanges, fontWeight = FontWeight.Bold, color = Color.White, fontSize = 15.sp)
                     }
                 }
 
@@ -255,13 +225,13 @@ fun EditProfileScreen(
                             }
                             Spacer(Modifier.width(14.dp))
                             Column(Modifier.weight(1f)) {
-                                Text("ESTADO DE CUENTA", fontSize = 11.sp, color = textColor.copy(0.4f), fontWeight = FontWeight.Bold, letterSpacing = 2.sp)
-                                if (viewModel.isPremium) Text("PREMIUM", color = Color(0xFFFFD700), fontWeight = FontWeight.Bold, fontSize = 16.sp)
-                                else Text("Estándar", fontWeight = FontWeight.SemiBold, color = textColor, fontSize = 16.sp)
+                                Text(strings.accountStatus, fontSize = 11.sp, color = textColor.copy(0.4f), fontWeight = FontWeight.Bold, letterSpacing = 2.sp)
+                                if (viewModel.isPremium) Text(strings.premium, color = Color(0xFFFFD700), fontWeight = FontWeight.Bold, fontSize = 16.sp)
+                                else Text(strings.standard, fontWeight = FontWeight.SemiBold, color = textColor, fontSize = 16.sp)
                             }
                             if (!viewModel.isPremium) {
                                 Button(onClick = onNavigateToPremium, shape = RoundedCornerShape(12.dp), colors = ButtonDefaults.buttonColors(containerColor = BlueAccent)) {
-                                    Text("Upgrade", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = Color.White)
+                                    Text(strings.upgrade, fontSize = 12.sp, fontWeight = FontWeight.Bold, color = Color.White)
                                 }
                             }
                         }
@@ -271,7 +241,7 @@ fun EditProfileScreen(
                 Spacer(Modifier.height(16.dp))
                 HorizontalDivider(Modifier.padding(vertical = 6.dp), 1.dp, textColor.copy(0.06f))
                 OutlinedButton(onClick = { onNavigateToHistorial() }, modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(14.dp), border = androidx.compose.foundation.BorderStroke(1.dp, BlueAccent.copy(0.3f))) {
-                    Text("Ver historial de pagos", color = BlueAccent)
+                    Text(strings.paymentHistory, color = BlueAccent)
                 }
                 Spacer(Modifier.height(20.dp))
             }

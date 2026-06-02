@@ -23,14 +23,15 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Badge
 import androidx.compose.material.icons.filled.Lock
 import androidx.compose.material.icons.filled.Login
-import androidx.compose.material.icons.filled.Key
-import androidx.compose.material.icons.filled.PersonAdd
 import androidx.compose.material.icons.filled.DarkMode
+import androidx.compose.material.icons.filled.Language
 import androidx.compose.material.icons.filled.LightMode
+import androidx.compose.material.icons.filled.PersonAdd
 import androidx.compose.material3.Icon
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.example.trainium2.data.i18n.LocalStrings
 import com.example.trainium2.ui.theme.*
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.trainium2.ui.viewmodel.LoginViewModel
@@ -40,11 +41,13 @@ import kotlinx.coroutines.delay
 fun LoginScreen(
     isDarkTheme: Boolean,
     onToggleTheme: () -> Unit,
+    onToggleLanguage: () -> Unit,
     onBack: () -> Unit,
     onNavigateToRegister: () -> Unit,
     onNavigateToForgot: () -> Unit,
     onLoginSuccess: (String, Int, Int, Int) -> Unit
 ) {
+    val strings = LocalStrings.current
     val viewModel = viewModel<LoginViewModel>()
     val context = LocalContext.current
 
@@ -100,16 +103,19 @@ fun LoginScreen(
     Box(modifier = Modifier.fillMaxSize()) {
         Box(Modifier.fillMaxSize().background(bgOverlay))
 
-        IconButton(
-            onClick = onToggleTheme,
-            modifier = Modifier.align(Alignment.TopEnd).padding(16.dp).statusBarsPadding().padding(top = 8.dp)
+        Row(
+            modifier = Modifier
+                .align(Alignment.TopEnd)
+                .statusBarsPadding()
+                .padding(end = 8.dp, top = 4.dp),
+            verticalAlignment = Alignment.CenterVertically
         ) {
-            Icon(
-                if (isDarkTheme) Icons.Default.LightMode else Icons.Default.DarkMode,
-                "Tema",
-                tint = BlueAccent,
-                modifier = Modifier.size(26.dp)
-            )
+            IconButton(onClick = onToggleLanguage) {
+                Icon(Icons.Default.Language, contentDescription = strings.language, tint = BlueAccent, modifier = Modifier.size(24.dp))
+            }
+            IconButton(onClick = onToggleTheme) {
+                Icon(if (isDarkTheme) Icons.Default.LightMode else Icons.Default.DarkMode, contentDescription = strings.theme, tint = BlueAccent, modifier = Modifier.size(26.dp))
+            }
         }
 
         Column(
@@ -127,8 +133,8 @@ fun LoginScreen(
 
             Spacer(Modifier.height(16.dp))
 
-            Text("INICIAR SESIÓN", fontSize = 26.sp, fontWeight = FontWeight.Black, color = textColor, letterSpacing = 4.sp, modifier = Modifier.alpha(titleAlpha))
-            Text("Bienvenido de vuelta a Trainium", fontSize = 13.sp, color = subtitleColor, modifier = Modifier.alpha(titleAlpha))
+            Text(strings.loginTitle, fontSize = 26.sp, fontWeight = FontWeight.Black, color = textColor, letterSpacing = 4.sp, modifier = Modifier.alpha(titleAlpha))
+            Text(strings.loginWelcome, fontSize = 13.sp, color = subtitleColor, modifier = Modifier.alpha(titleAlpha))
 
             Spacer(Modifier.height(28.dp))
 
@@ -139,18 +145,18 @@ fun LoginScreen(
                 colors = CardDefaults.cardColors(containerColor = cardBg)
             ) {
                 Column(Modifier.padding(20.dp)) {
-                    Text("CREDENCIALES", fontSize = 11.sp, color = textColor.copy(0.3f), fontWeight = FontWeight.Bold, letterSpacing = 2.sp)
+                    Text(strings.credentials, fontSize = 11.sp, color = textColor.copy(0.3f), fontWeight = FontWeight.Bold, letterSpacing = 2.sp)
                     Spacer(Modifier.height(14.dp))
                     OutlinedTextField(
                         value = viewModel.dni, onValueChange = { viewModel.dni = it.uppercase() },
-                        label = { Text("DNI") }, modifier = Modifier.fillMaxWidth(), singleLine = true,
+                        label = { Text(strings.dni) }, modifier = Modifier.fillMaxWidth(), singleLine = true,
                         shape = RoundedCornerShape(14.dp), colors = inputColors,
                         leadingIcon = { Icon(Icons.Default.Badge, null, tint = BlueAccent.copy(0.6f)) }
                     )
                     Spacer(Modifier.height(12.dp))
                     OutlinedTextField(
                         value = viewModel.pass, onValueChange = { viewModel.pass = it },
-                        label = { Text("Contraseña") }, visualTransformation = PasswordVisualTransformation(),
+                        label = { Text(strings.password) }, visualTransformation = PasswordVisualTransformation(),
                         modifier = Modifier.fillMaxWidth(), singleLine = true,
                         shape = RoundedCornerShape(14.dp), colors = inputColors,
                         leadingIcon = { Icon(Icons.Default.Lock, null, tint = BlueAccent.copy(0.6f)) }
@@ -171,7 +177,7 @@ fun LoginScreen(
                     Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.Center) {
                         Icon(Icons.Default.Login, null, tint = Color.White, modifier = Modifier.size(18.dp))
                         Spacer(Modifier.width(8.dp))
-                        Text("ENTRAR", fontSize = 16.sp, fontWeight = FontWeight.Bold, color = Color.White, letterSpacing = 2.sp)
+                        Text(strings.enter, fontSize = 16.sp, fontWeight = FontWeight.Bold, color = Color.White, letterSpacing = 2.sp)
                     }
                 }
             }
@@ -180,7 +186,7 @@ fun LoginScreen(
 
             Column(Modifier.alpha(linksAlpha), horizontalAlignment = Alignment.CenterHorizontally) {
                 TextButton(onClick = onNavigateToForgot) {
-                    Text("¿Olvidaste tu contraseña?", color = textColor.copy(0.5f), fontSize = 13.sp)
+                    Text(strings.forgotPassword, color = textColor.copy(0.5f), fontSize = 13.sp)
                 }
                 Spacer(Modifier.height(4.dp))
                 OutlinedButton(
@@ -188,10 +194,10 @@ fun LoginScreen(
                     shape = RoundedCornerShape(14.dp),
                     border = androidx.compose.foundation.BorderStroke(1.dp, BlueAccent.copy(0.3f))
                 ) {
-                    Text("CREAR CUENTA NUEVA", color = BlueAccent, fontWeight = FontWeight.SemiBold, fontSize = 14.sp)
+                    Text(strings.createNewAccount, color = BlueAccent, fontWeight = FontWeight.SemiBold, fontSize = 14.sp)
                 }
                 Spacer(Modifier.height(8.dp))
-                TextButton(onClick = onBack) { Text("← INICIO", fontWeight = FontWeight.Bold, color = textColor.copy(0.3f)) }
+                TextButton(onClick = onBack) { Text(strings.backToHome, fontWeight = FontWeight.Bold, color = textColor.copy(0.3f)) }
             }
         }
     }

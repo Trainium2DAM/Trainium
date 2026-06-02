@@ -25,12 +25,14 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.trainium2.models.Pago
+import com.example.trainium2.data.i18n.LocalStrings
 import com.example.trainium2.ui.theme.*
 import com.example.trainium2.ui.viewmodel.HistorialViewModel
 import kotlinx.coroutines.delay
 
 @Composable
-fun HistorialScreen(userId: Int, darkTheme: Boolean, onToggleTheme: () -> Unit, onBack: () -> Unit) {
+fun HistorialScreen(userId: Int, darkTheme: Boolean, onToggleTheme: () -> Unit, onToggleLanguage: () -> Unit, onBack: () -> Unit) {
+    val strings = LocalStrings.current
     val viewModel = viewModel<HistorialViewModel>()
     var visible by remember { mutableStateOf(false) }
 
@@ -49,8 +51,8 @@ fun HistorialScreen(userId: Int, darkTheme: Boolean, onToggleTheme: () -> Unit, 
     Box(Modifier.fillMaxSize().background(bgBrush)) {
         Column(Modifier.fillMaxSize().padding(horizontal = 20.dp)) {
             ScreenHeader(
-                title = "Pagos",
-                subtitle = "Tu historial financiero",
+                title = strings.paymentHistory2,
+                subtitle = strings.subtitleHistory,
                 onBack = onBack,
                 trailing = {
                     IconButton(onClick = { viewModel.loadPagos(userId) }) {
@@ -60,7 +62,8 @@ fun HistorialScreen(userId: Int, darkTheme: Boolean, onToggleTheme: () -> Unit, 
                 textColor = textColor,
                 subtitleColor = subtitleColor,
                 onToggleTheme = onToggleTheme,
-                darkTheme = darkTheme
+                darkTheme = darkTheme,
+                onToggleLanguage = onToggleLanguage
             )
             Spacer(Modifier.height(30.dp))
 
@@ -76,10 +79,10 @@ fun HistorialScreen(userId: Int, darkTheme: Boolean, onToggleTheme: () -> Unit, 
                 }
             } else if (viewModel.error != null || viewModel.pagos.isEmpty()) {
                 Column(Modifier.fillMaxSize(), verticalArrangement = Arrangement.Center, horizontalAlignment = Alignment.CenterHorizontally) {
-                    Text(if (viewModel.error != null) "Error de conexión" else "Sin pagos registrados", color = textColor.copy(0.6f))
+                    Text(if (viewModel.error != null) strings.connectionError else strings.noPayments, color = textColor.copy(0.6f))
                     Spacer(Modifier.height(16.dp))
                     Button(onClick = { viewModel.loadPagos(userId) }, colors = ButtonDefaults.buttonColors(containerColor = BlueAccent.copy(0.1f))) {
-                        Text("Reintentar", color = BlueAccent)
+                        Text(strings.retry, color = BlueAccent)
                     }
                 }
             } else {
@@ -96,7 +99,8 @@ fun HistorialScreen(userId: Int, darkTheme: Boolean, onToggleTheme: () -> Unit, 
                         ) {
                             Row(Modifier.padding(20.dp), verticalAlignment = Alignment.CenterVertically) {
                                 Box(Modifier.size(40.dp).background(BlueAccent.copy(0.1f), CircleShape), contentAlignment = Alignment.Center) {
-                                    Icon(if (pago.metodoPago.contains("Tarj", true)) Icons.Default.CreditCard else Icons.Default.Payments, null, tint = BlueAccent, modifier = Modifier.size(22.dp))
+                                    val isCard = pago.metodoPago.contains("Tarj", ignoreCase = true) || pago.metodoPago.contains(strings.creditCard.take(4), ignoreCase = true)
+                                    Icon(if (isCard) Icons.Default.CreditCard else Icons.Default.Payments, null, tint = BlueAccent, modifier = Modifier.size(22.dp))
                                 }
                                 Spacer(Modifier.width(16.dp))
                                 Column(Modifier.weight(1f)) {

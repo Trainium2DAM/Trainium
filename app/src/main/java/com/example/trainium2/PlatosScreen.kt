@@ -36,6 +36,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.trainium2.models.Plato
+import com.example.trainium2.data.i18n.LocalStrings
 import com.example.trainium2.ui.theme.*
 import com.example.trainium2.ui.viewmodel.PlatosViewModel
 import kotlinx.coroutines.delay
@@ -47,8 +48,10 @@ fun PlatosScreen(
     isAdmin: Boolean,
     darkTheme: Boolean,
     onToggleTheme: () -> Unit,
+    onToggleLanguage: () -> Unit,
     onBack: () -> Unit
 ) {
+    val strings = LocalStrings.current
     val viewModel = viewModel<PlatosViewModel>()
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
@@ -94,7 +97,7 @@ fun PlatosScreen(
 
     fun enviarSugerencia() {
         if (viewModel.nuevoTitulo.isEmpty() || viewModel.nuevaReceta.isEmpty() || viewModel.nuevoTiempo.isEmpty()) {
-            Toast.makeText(context, "Por favor, completa los campos", Toast.LENGTH_SHORT).show()
+            Toast.makeText(context, strings.completeFields, Toast.LENGTH_SHORT).show()
             return
         }
         viewModel.enviarSugerencia(userId) {
@@ -106,8 +109,8 @@ fun PlatosScreen(
         Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(20.dp)) {
             // Header
             ScreenHeader(
-                title = "Nutrición",
-                subtitle = "Recomendación diaria",
+                title = strings.dishes,
+                subtitle = strings.subtitleDishes,
                 onBack = onBack,
                 trailing = {
                     IconButton(onClick = { visible = false; viewModel.loadPlatos(isAdmin) }) {
@@ -117,7 +120,8 @@ fun PlatosScreen(
                 textColor = textColor,
                 subtitleColor = subtitleColor,
                 onToggleTheme = onToggleTheme,
-                darkTheme = darkTheme
+                darkTheme = darkTheme,
+                onToggleLanguage = onToggleLanguage
             )
 
             Spacer(Modifier.height(10.dp))
@@ -129,7 +133,7 @@ fun PlatosScreen(
             ) {
                 Icon(Icons.Default.Add, null, tint = Color.White)
                 Spacer(Modifier.width(8.dp))
-                Text("Sugerir una Receta", color = Color.White, fontWeight = FontWeight.Bold)
+                Text(strings.suggestRecipe, color = Color.White, fontWeight = FontWeight.Bold)
             }
             Spacer(Modifier.height(20.dp))
 
@@ -142,7 +146,7 @@ fun PlatosScreen(
             } else if (viewModel.error != null) {
                 Column(Modifier.fillMaxWidth(), horizontalAlignment = Alignment.CenterHorizontally) {
                     Text("${viewModel.error}", color = textColor)
-                    Button(onClick = { viewModel.loadPlatos(isAdmin) }, Modifier.padding(top = 16.dp)) { Text("Reintentar") }
+                    Button(onClick = { viewModel.loadPlatos(isAdmin) }, Modifier.padding(top = 16.dp)) { Text(strings.retry) }
                 }
             } else {
                 // Plato Actual con Animación de Transición
@@ -157,7 +161,7 @@ fun PlatosScreen(
                     if (plato != null) {
                         Column(horizontalAlignment = Alignment.CenterHorizontally) {
                             Text(
-                                text = "RECOMENDACIÓN ${viewModel.indicePlatoActual + 1} DE ${viewModel.listaPlatosAceptados.size}",
+                                text = String.format(strings.recommendationFormat, viewModel.indicePlatoActual + 1, viewModel.listaPlatosAceptados.size),
                                 fontSize = 10.sp,
                                 fontWeight = FontWeight.Black,
                                 color = BlueAccent.copy(0.7f),
@@ -207,7 +211,7 @@ fun PlatosScreen(
                                     }
 
                                     HorizontalDivider(color = textColor.copy(0.1f)); Spacer(Modifier.height(18.dp))
-                                    Text(plato.descripcion ?: "Sin descripción", color = textColor.copy(0.7f), textAlign = TextAlign.Center, fontSize = 16.sp, lineHeight = 24.sp)
+                                    Text(plato.descripcion ?: strings.noDescription, color = textColor.copy(0.7f), textAlign = TextAlign.Center, fontSize = 16.sp, lineHeight = 24.sp)
                                 }
                             }
                         }
@@ -225,14 +229,14 @@ fun PlatosScreen(
                     ) {
                         Icon(Icons.Default.ArrowForward, null)
                         Spacer(Modifier.width(10.dp))
-                        Text("Siguiente plato recomendado", fontWeight = FontWeight.ExtraBold, fontSize = 15.sp)
+                        Text(strings.nextRecommended, fontWeight = FontWeight.ExtraBold, fontSize = 15.sp)
                     }
                 }
 
                 // Sugerencias Pendientes (Sólo Admin)
                 if (isAdmin && viewModel.sugerenciasPendientes.isNotEmpty()) {
                     Spacer(Modifier.height(40.dp))
-                    Text("SUGERENCIAS PENDIENTES", fontSize = 12.sp, fontWeight = FontWeight.Black, color = BlueAccent, letterSpacing = 2.sp)
+                    Text(strings.pendingSuggestions, fontSize = 12.sp, fontWeight = FontWeight.Black, color = BlueAccent, letterSpacing = 2.sp)
                     Spacer(Modifier.height(12.dp))
 
                     viewModel.sugerenciasPendientes.forEach { sug ->
@@ -245,7 +249,7 @@ fun PlatosScreen(
                                 Spacer(Modifier.width(12.dp))
                                 Column(Modifier.weight(1f)) {
                                     Text(sug.nombre, fontWeight = FontWeight.Bold, color = textColor)
-                                    Text("Tiempo: ${sug.tiempo ?: "N/D"}", fontSize = 12.sp, color = subtitleColor)
+                                    Text("${strings.timeLabel} ${sug.tiempo ?: strings.notAvailable}", fontSize = 12.sp, color = subtitleColor)
                                 }
                                 Row {
                                     IconButton(onClick = { viewModel.aprobarSugerencia(sug.id ?: return@IconButton); viewModel.loadPlatos(isAdmin) }) { Icon(Icons.Default.Check, null, tint = Color(0xFF00E676)) }
@@ -265,29 +269,29 @@ fun PlatosScreen(
         AlertDialog(
             onDismissRequest = { viewModel.showingDialogoSugerencia = false },
             containerColor = cardBg,
-            title = { Text("Sugerir Receta", color = textColor, fontWeight = FontWeight.Bold) },
+            title = { Text(strings.suggestRecipe, color = textColor, fontWeight = FontWeight.Bold) },
             text = {
                 Column(Modifier.verticalScroll(rememberScrollState())) {
                     Box(Modifier.fillMaxWidth().height(120.dp).background(textColor.copy(0.05f), RoundedCornerShape(12.dp)).clip(RoundedCornerShape(12.dp)).clickable { launcher.launch("image/*") }, contentAlignment = Alignment.Center) {
                         if (!viewModel.fotoBase64.isNullOrEmpty()) {
                             val bitmap = decodeBase64ToBitmap(viewModel.fotoBase64!!)
                             if (bitmap != null) Image(bitmap = bitmap.asImageBitmap(), null, Modifier.fillMaxSize(), contentScale = ContentScale.Crop)
-                        } else { Text("Seleccionar foto", color = BlueAccent, fontWeight = FontWeight.SemiBold) }
+                        } else { Text(strings.selectPhoto, color = BlueAccent, fontWeight = FontWeight.SemiBold) }
                     }
                     Spacer(Modifier.height(12.dp))
-                    OutlinedTextField(value = viewModel.nuevoTitulo, onValueChange = { viewModel.nuevoTitulo = it }, label = { Text("Título de la Receta") }, modifier = Modifier.fillMaxWidth(), colors = dColors)
-                    OutlinedTextField(value = viewModel.nuevoTiempo, onValueChange = { viewModel.nuevoTiempo = it }, label = { Text("Tiempo (ej: 40 min)") }, modifier = Modifier.fillMaxWidth(), colors = dColors)
-                    OutlinedTextField(value = viewModel.caloriasTexto, onValueChange = { viewModel.caloriasTexto = it }, label = { Text("Calorías aproximadas") }, modifier = Modifier.fillMaxWidth(), colors = dColors)
-                    OutlinedTextField(value = viewModel.nuevaReceta, onValueChange = { viewModel.nuevaReceta = it }, label = { Text("Pasos de la receta") }, modifier = Modifier.fillMaxWidth(), minLines = 3, colors = dColors)
+                    OutlinedTextField(value = viewModel.nuevoTitulo, onValueChange = { viewModel.nuevoTitulo = it }, label = { Text(strings.recipeTitle) }, modifier = Modifier.fillMaxWidth(), colors = dColors)
+                    OutlinedTextField(value = viewModel.nuevoTiempo, onValueChange = { viewModel.nuevoTiempo = it }, label = { Text(strings.cookingTime) }, modifier = Modifier.fillMaxWidth(), colors = dColors)
+                    OutlinedTextField(value = viewModel.caloriasTexto, onValueChange = { viewModel.caloriasTexto = it }, label = { Text(strings.approximateCalories) }, modifier = Modifier.fillMaxWidth(), colors = dColors)
+                    OutlinedTextField(value = viewModel.nuevaReceta, onValueChange = { viewModel.nuevaReceta = it }, label = { Text(strings.recipeSteps) }, modifier = Modifier.fillMaxWidth(), minLines = 3, colors = dColors)
                 }
             },
             confirmButton = {
                 Button(onClick = { enviarSugerencia() }, colors = ButtonDefaults.buttonColors(containerColor = BlueAccent)) {
-                    Text("Enviar sugerencia", color = Color.White)
+                    Text(strings.sendSuggestion, color = Color.White)
                 }
             },
             dismissButton = {
-                TextButton(onClick = { viewModel.showingDialogoSugerencia = false }) { Text("Cancelar", color = textColor.copy(0.6f)) }
+                TextButton(onClick = { viewModel.showingDialogoSugerencia = false }) { Text(strings.cancel, color = textColor.copy(0.6f)) }
             }
         )
     }

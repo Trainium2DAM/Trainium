@@ -28,13 +28,16 @@ import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.PersonAdd
 import androidx.compose.material.icons.filled.Email
 import androidx.compose.material.icons.filled.DarkMode
+import androidx.compose.material.icons.filled.Language
 import androidx.compose.material.icons.filled.LightMode
 import androidx.compose.material3.Icon
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.material.icons.filled.Language
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.example.trainium2.data.i18n.LocalStrings
 import com.example.trainium2.ui.theme.*
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.trainium2.ui.viewmodel.RegisterViewModel
@@ -99,7 +102,8 @@ private val PREFIJOS_PAIS = listOf(
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun RegisterScreen(isDarkTheme: Boolean, onToggleTheme: () -> Unit, onBack: () -> Unit) {
+fun RegisterScreen(isDarkTheme: Boolean, onToggleTheme: () -> Unit, onToggleLanguage: () -> Unit, onBack: () -> Unit) {
+    val strings = LocalStrings.current
     val viewModel = viewModel<RegisterViewModel>()
     val context = LocalContext.current
 
@@ -157,16 +161,19 @@ fun RegisterScreen(isDarkTheme: Boolean, onToggleTheme: () -> Unit, onBack: () -
     }
 
     Box(Modifier.fillMaxSize().background(bgBrush)) {
-        IconButton(
-            onClick = onToggleTheme,
-            modifier = Modifier.align(Alignment.TopEnd).padding(16.dp).statusBarsPadding().padding(top = 8.dp)
+        Row(
+            modifier = Modifier
+                .align(Alignment.TopEnd)
+                .statusBarsPadding()
+                .padding(end = 8.dp, top = 4.dp),
+            verticalAlignment = Alignment.CenterVertically
         ) {
-            Icon(
-                if (isDarkTheme) Icons.Default.LightMode else Icons.Default.DarkMode,
-                "Tema",
-                tint = BlueAccent,
-                modifier = Modifier.size(26.dp)
-            )
+            IconButton(onClick = onToggleLanguage) {
+                Icon(Icons.Default.Language, contentDescription = strings.language, tint = BlueAccent, modifier = Modifier.size(24.dp))
+            }
+            IconButton(onClick = onToggleTheme) {
+                Icon(if (isDarkTheme) Icons.Default.LightMode else Icons.Default.DarkMode, contentDescription = strings.theme, tint = BlueAccent, modifier = Modifier.size(26.dp))
+            }
         }
 
         Column(Modifier.fillMaxSize().padding(24.dp).verticalScroll(rememberScrollState()), horizontalAlignment = Alignment.CenterHorizontally) {
@@ -182,8 +189,8 @@ fun RegisterScreen(isDarkTheme: Boolean, onToggleTheme: () -> Unit, onBack: () -
             }
             Spacer(Modifier.height(10.dp))
 
-            Text("Crear Cuenta", fontSize = 26.sp, fontWeight = FontWeight.Bold, color = textColor, letterSpacing = 1.sp, modifier = Modifier.alpha(titleAlpha))
-            Text("Únete a la comunidad Trainium", fontSize = 13.sp, color = subtitleColor, modifier = Modifier.alpha(titleAlpha))
+            Text(strings.registerTitle, fontSize = 26.sp, fontWeight = FontWeight.Bold, color = textColor, letterSpacing = 1.sp, modifier = Modifier.alpha(titleAlpha))
+            Text(strings.registerSubtitle, fontSize = 13.sp, color = subtitleColor, modifier = Modifier.alpha(titleAlpha))
             Spacer(Modifier.height(22.dp))
 
             Card(
@@ -193,15 +200,15 @@ fun RegisterScreen(isDarkTheme: Boolean, onToggleTheme: () -> Unit, onBack: () -
                 colors = CardDefaults.cardColors(containerColor = cardBg)
             ) {
                 Column(Modifier.padding(20.dp)) {
-                    Text("DATOS PERSONALES", fontSize = 11.sp, color = textColor.copy(0.3f), fontWeight = FontWeight.Bold, letterSpacing = 2.sp)
+                    Text(strings.personalData, fontSize = 11.sp, color = textColor.copy(0.3f), fontWeight = FontWeight.Bold, letterSpacing = 2.sp)
                     Spacer(Modifier.height(14.dp))
-                    OutlinedTextField(value = viewModel.nombre, onValueChange = { viewModel.nombre = it }, modifier = Modifier.fillMaxWidth(), label = { Text("Nombre completo") }, singleLine = true, shape = RoundedCornerShape(14.dp), colors = inputColors, leadingIcon = { Icon(Icons.Default.Person, null, tint = BlueAccent.copy(0.6f)) })
+                    OutlinedTextField(value = viewModel.nombre, onValueChange = { viewModel.nombre = it }, modifier = Modifier.fillMaxWidth(), label = { Text(strings.fullName) }, singleLine = true, shape = RoundedCornerShape(14.dp), colors = inputColors, leadingIcon = { Icon(Icons.Default.Person, null, tint = BlueAccent.copy(0.6f)) })
                     Spacer(Modifier.height(10.dp))
-                    OutlinedTextField(value = viewModel.dni, onValueChange = { viewModel.dni = it.uppercase() }, modifier = Modifier.fillMaxWidth(), label = { Text("DNI / NIE / Documento extranjero") }, singleLine = true, shape = RoundedCornerShape(14.dp), colors = inputColors, leadingIcon = { Icon(Icons.Default.Badge, null, tint = BlueAccent.copy(0.6f)) })
+                    OutlinedTextField(value = viewModel.dni, onValueChange = { viewModel.dni = it.uppercase() }, modifier = Modifier.fillMaxWidth(), label = { Text(strings.dniNie) }, singleLine = true, shape = RoundedCornerShape(14.dp), colors = inputColors, leadingIcon = { Icon(Icons.Default.Badge, null, tint = BlueAccent.copy(0.6f)) })
                     Spacer(Modifier.height(10.dp))
-                    OutlinedTextField(value = viewModel.email, onValueChange = { viewModel.email = it }, modifier = Modifier.fillMaxWidth(), label = { Text("Email") }, singleLine = true, shape = RoundedCornerShape(14.dp), colors = inputColors, leadingIcon = { Icon(Icons.Default.Email, null, tint = BlueAccent.copy(0.6f)) })
+                    OutlinedTextField(value = viewModel.email, onValueChange = { viewModel.email = it }, modifier = Modifier.fillMaxWidth(), label = { Text(strings.email) }, singleLine = true, shape = RoundedCornerShape(14.dp), colors = inputColors, leadingIcon = { Icon(Icons.Default.Email, null, tint = BlueAccent.copy(0.6f)) })
                     Spacer(Modifier.height(10.dp))
-                    OutlinedTextField(value = viewModel.pass, onValueChange = { viewModel.pass = it }, modifier = Modifier.fillMaxWidth(), label = { Text("Contraseña") }, singleLine = true, visualTransformation = PasswordVisualTransformation(), shape = RoundedCornerShape(14.dp), colors = inputColors, leadingIcon = { Icon(Icons.Default.Lock, null, tint = BlueAccent.copy(0.6f)) })
+                    OutlinedTextField(value = viewModel.pass, onValueChange = { viewModel.pass = it }, modifier = Modifier.fillMaxWidth(), label = { Text(strings.password) }, singleLine = true, visualTransformation = PasswordVisualTransformation(), shape = RoundedCornerShape(14.dp), colors = inputColors, leadingIcon = { Icon(Icons.Default.Lock, null, tint = BlueAccent.copy(0.6f)) })
                     Spacer(Modifier.height(10.dp))
 
                     Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -215,7 +222,7 @@ fun RegisterScreen(isDarkTheme: Boolean, onToggleTheme: () -> Unit, onBack: () -
                                 onValueChange = {},
                                 readOnly = true,
                                 singleLine = true,
-                                label = { Text("Prefijo") },
+                                label = { Text(strings.prefix) },
                                 trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = viewModel.prefijoDesplegado) },
                                 shape = RoundedCornerShape(14.dp),
                                 colors = inputColors,
@@ -241,7 +248,7 @@ fun RegisterScreen(isDarkTheme: Boolean, onToggleTheme: () -> Unit, onBack: () -
                             value = viewModel.numeroTelf,
                             onValueChange = { viewModel.numeroTelf = it.filter { c -> c.isDigit() } },
                             modifier = Modifier.weight(1f),
-                            label = { Text("Número") },
+                            label = { Text(strings.number) },
                             singleLine = true,
                             shape = RoundedCornerShape(14.dp),
                             colors = inputColors,
@@ -264,13 +271,13 @@ fun RegisterScreen(isDarkTheme: Boolean, onToggleTheme: () -> Unit, onBack: () -
                     Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.Center) {
                         Icon(Icons.Default.PersonAdd, null, tint = Color.White, modifier = Modifier.size(18.dp))
                         Spacer(Modifier.width(8.dp))
-                        Text("Crear cuenta", fontSize = 16.sp, fontWeight = FontWeight.Bold, color = Color.White)
+                        Text(strings.createAccount, fontSize = 16.sp, fontWeight = FontWeight.Bold, color = Color.White)
                     }
                 }
             }
 
             Spacer(Modifier.height(12.dp))
-            TextButton(onClick = onBack, Modifier.fillMaxWidth().alpha(btnAlpha)) { Text("¿Ya tienes cuenta? Inicia sesión", color = textColor.copy(0.5f), fontSize = 13.sp) }
+            TextButton(onClick = onBack, Modifier.fillMaxWidth().alpha(btnAlpha)) { Text(strings.alreadyHaveAccount, color = textColor.copy(0.5f), fontSize = 13.sp) }
             Spacer(Modifier.height(16.dp))
         }
     }

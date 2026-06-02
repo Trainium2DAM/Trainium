@@ -32,6 +32,7 @@ import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.trainium2.models.Maquina
 import com.example.trainium2.models.Reserva
+import com.example.trainium2.data.i18n.LocalStrings
 import com.example.trainium2.ui.theme.*
 import com.example.trainium2.ui.viewmodel.MaquinasViewModel
 import kotlinx.coroutines.delay
@@ -47,8 +48,10 @@ fun MaquinasScreen(
     isAdmin: Boolean,
     darkTheme: Boolean,
     onToggleTheme: () -> Unit,
+    onToggleLanguage: () -> Unit,
     onBack: () -> Unit
 ) {
+    val strings = LocalStrings.current
     val viewModel = viewModel<MaquinasViewModel>()
     val context = LocalContext.current
 
@@ -96,13 +99,14 @@ fun MaquinasScreen(
     Box(Modifier.fillMaxSize().background(bgBrush)) {
         Column(Modifier.fillMaxSize().padding(20.dp)) {
             ScreenHeader(
-                title = "Equipamiento",
-                subtitle = "Gestiona tus entrenamientos",
+                title = strings.machines,
+                subtitle = strings.subtitleMachines,
                 onBack = onBack,
                 textColor = textColor,
                 subtitleColor = subtitleColor,
                 onToggleTheme = onToggleTheme,
-                darkTheme = darkTheme
+                darkTheme = darkTheme,
+                onToggleLanguage = onToggleLanguage
             )
             Spacer(Modifier.height(12.dp))
 
@@ -135,7 +139,7 @@ fun MaquinasScreen(
                                         Spacer(Modifier.width(12.dp))
                                         Column(Modifier.weight(1f)) {
                                             Text(maquina.nombre, fontWeight = FontWeight.Bold, color = textColor)
-                                            if (!maquina.operativa) Text("FUERA DE SERVICIO", color = Color(0xFFFF6B6B), fontSize = 11.sp, fontWeight = FontWeight.Bold)
+                                            if (!maquina.operativa) Text(strings.outOfService, color = Color(0xFFFF6B6B), fontSize = 11.sp, fontWeight = FontWeight.Bold)
                                             else maquina.tipo?.let { Text(it, fontSize = 12.sp, color = subtitleColor) }
                                         }
                                         if (isAdmin) {
@@ -164,7 +168,7 @@ fun MaquinasScreen(
                                         Box(Modifier.fillMaxWidth().height(42.dp).background(
                                             if (maquina.operativa) Brush.horizontalGradient(listOf(BlueAccent, BlueElectric)) else Brush.horizontalGradient(listOf(textColor.copy(0.1f), textColor.copy(0.1f))),
                                             RoundedCornerShape(12.dp)), contentAlignment = Alignment.Center) {
-                                            Text(if (maquina.operativa) "Reservar" else "Mantenimiento", fontWeight = FontWeight.SemiBold, color = Color.White)
+                                            Text(if (maquina.operativa) strings.reserve else strings.maintenance, fontWeight = FontWeight.SemiBold, color = Color.White)
                                         }
                                     }
                                 }
@@ -180,7 +184,7 @@ fun MaquinasScreen(
                 containerColor = BlueAccent,
                 contentColor = Color.White
             ) {
-                Icon(Icons.Default.Add, "Añadir")
+                Icon(Icons.Default.Add, strings.addMachine)
             }
         }
     }
@@ -197,9 +201,9 @@ fun MaquinasScreen(
                     }
                     mostrarPickerMantenimientoDesde = false
                     mostrarTimePickerMantenimientoDesde = true
-                }) { Text("OK", color = MaterialTheme.colorScheme.primary, fontWeight = FontWeight.Bold) }
+                }) { Text(strings.ok, color = MaterialTheme.colorScheme.primary, fontWeight = FontWeight.Bold) }
             },
-            dismissButton = { TextButton(onClick = { mostrarPickerMantenimientoDesde = false }) { Text("Cancelar", color = textColor.copy(0.5f)) } },
+            dismissButton = { TextButton(onClick = { mostrarPickerMantenimientoDesde = false }) { Text(strings.cancel, color = textColor.copy(0.5f)) } },
             colors = DatePickerDefaults.colors(
                 selectedDayContentColor = Color.White, selectedDayContainerColor = BlueAccent,
                 todayContentColor = BlueAccent, todayDateBorderColor = BlueAccent,
@@ -221,9 +225,9 @@ fun MaquinasScreen(
                         mostrarPickerMantenimientoHasta = false
                         mostrarTimePickerMantenimientoHasta = true
                     } else { mostrarPickerMantenimientoHasta = false }
-                }) { Text("OK", color = MaterialTheme.colorScheme.primary, fontWeight = FontWeight.Bold) }
+                }) { Text(strings.ok, color = MaterialTheme.colorScheme.primary, fontWeight = FontWeight.Bold) }
             },
-            dismissButton = { TextButton(onClick = { mostrarPickerMantenimientoHasta = false }) { Text("Cancelar", color = textColor.copy(0.5f)) } },
+            dismissButton = { TextButton(onClick = { mostrarPickerMantenimientoHasta = false }) { Text(strings.cancel, color = textColor.copy(0.5f)) } },
             colors = DatePickerDefaults.colors(
                 selectedDayContentColor = Color.White, selectedDayContainerColor = BlueAccent,
                 todayContentColor = BlueAccent, todayDateBorderColor = BlueAccent,
@@ -237,10 +241,10 @@ fun MaquinasScreen(
             onDismiss = { mostrarTimePickerMantenimientoDesde = false },
             onConfirm = { h, min ->
                 viewModel.horaDesdeM = String.format("%02d:%02d", h, min)
-                Toast.makeText(context, "Ahora selecciona la fecha de FIN", Toast.LENGTH_SHORT).show()
+                Toast.makeText(context, strings.selectEndDateToast, Toast.LENGTH_SHORT).show()
                 mostrarPickerMantenimientoHasta = true
             },
-            title = "Desde que hora?",
+            title = strings.fromWhatTime,
             initialHour = 12,
             initialMinute = 0
         )
@@ -259,7 +263,7 @@ fun MaquinasScreen(
                     )
                 }
             },
-            title = "Hasta que hora?",
+            title = strings.untilWhatTime,
             initialHour = 12,
             initialMinute = 0
         )
@@ -286,9 +290,9 @@ fun MaquinasScreen(
                         }
                         mostrarSelectorHora = true
                     } else { mostrarDatePickerReserva = false }
-                }) { Text("OK", color = MaterialTheme.colorScheme.primary, fontWeight = FontWeight.Bold) }
+                }) { Text(strings.ok, color = MaterialTheme.colorScheme.primary, fontWeight = FontWeight.Bold) }
             },
-            dismissButton = { TextButton(onClick = { mostrarDatePickerReserva = false }) { Text("Cancelar", color = textColor.copy(0.5f)) } },
+            dismissButton = { TextButton(onClick = { mostrarDatePickerReserva = false }) { Text(strings.cancel, color = textColor.copy(0.5f)) } },
             colors = DatePickerDefaults.colors(
                 selectedDayContentColor = Color.White, selectedDayContainerColor = BlueAccent,
                 todayContentColor = BlueAccent, todayDateBorderColor = BlueAccent,
@@ -314,23 +318,23 @@ fun MaquinasScreen(
             onValidate = { h, m ->
                 val selMin = h * 60 + m
                 val nowMin = LocalTime.now(ZoneId.systemDefault()).let { it.hour * 60 + it.minute }
-                if (viewModel.fechaSeleccionada == hoy && selMin <= nowMin) return@AppTimePickerDialog "La hora debe ser posterior a la actual"
+                if (viewModel.fechaSeleccionada == hoy && selMin <= nowMin) return@AppTimePickerDialog strings.timeMustBeLater
                 val selStr = String.format("%02d:%02d", h, m)
                 val ocupado = viewModel.reservasDeLaMaquina.any { r ->
                     val p1 = r.horaInicio.split(":"); val ini = p1[0].toInt() * 60 + p1[1].toInt()
                     val p2 = r.horaFin.split(":"); val fin = p2[0].toInt() * 60 + p2[1].toInt()
                     selMin >= ini && selMin < fin
                 }
-                if (ocupado) return@AppTimePickerDialog "Esta maquina ya esta ocupada a las $selStr"
+                if (ocupado) return@AppTimePickerDialog String.format(strings.machineOccupiedAt, selStr)
                 val ocupadoUser = viewModel.reservasDelUsuario.any { r ->
                     val p1 = r.horaInicio.split(":"); val ini = p1[0].toInt() * 60 + p1[1].toInt()
                     val p2 = r.horaFin.split(":"); val fin = p2[0].toInt() * 60 + p2[1].toInt()
                     selMin >= ini && selMin < fin
                 }
-                if (ocupadoUser) return@AppTimePickerDialog "Ya tienes una reserva a las $selStr"
+                if (ocupadoUser) return@AppTimePickerDialog String.format(strings.userReservedAt, selStr)
                 null
             },
-            title = "A que hora?",
+            title = strings.whatTime,
             initialHour = hInicial,
             initialMinute = mInicial
         )
@@ -354,22 +358,22 @@ fun MaquinasScreen(
                 val finTotal = h * 60 + m
                 val finAdj = if (finTotal <= iniTotalMin) finTotal + 1440 else finTotal
                 val dur = finAdj - iniTotalMin
-                if (dur > 60) return@AppTimePickerDialog "Maximo 1 hora por reserva"
+                if (dur > 60) return@AppTimePickerDialog strings.maxOneHour
                 val chocaMaquina = viewModel.reservasDeLaMaquina.any { r ->
                     val p1 = r.horaInicio.split(":"); val rIni = p1[0].toInt() * 60 + p1[1].toInt()
                     val p2 = r.horaFin.split(":"); val rFin = p2[0].toInt() * 60 + p2[1].toInt()
                     iniTotalMin < rFin && finAdj > rIni
                 }
-                if (chocaMaquina) return@AppTimePickerDialog "La maquina ya esta ocupada en ese horario"
+                if (chocaMaquina) return@AppTimePickerDialog strings.machineOccupiedSchedule
                 val chocaUser = viewModel.reservasDelUsuario.any { r ->
                     val p1 = r.horaInicio.split(":"); val rIni = p1[0].toInt() * 60 + p1[1].toInt()
                     val p2 = r.horaFin.split(":"); val rFin = p2[0].toInt() * 60 + p2[1].toInt()
                     iniTotalMin < rFin && finAdj > rIni
                 }
-                if (chocaUser) return@AppTimePickerDialog "Ya tienes una reserva en ese horario"
+                if (chocaUser) return@AppTimePickerDialog strings.userReservationConflict
                 null
             },
-            title = "Hasta que hora?",
+            title = strings.untilWhatTime,
             initialHour = finDefaultMin / 60,
             initialMinute = finDefaultMin % 60
         )
@@ -380,20 +384,20 @@ fun MaquinasScreen(
         AlertDialog(
             onDismissRequest = { viewModel.showingDialogAdd = false },
             containerColor = cardBg,
-            title = { Text("Nueva Maquina", color = textColor, fontWeight = FontWeight.Bold) },
+            title = { Text(strings.newMachine, color = textColor, fontWeight = FontWeight.Bold) },
             text = {
                 Column {
-                    OutlinedTextField(value = viewModel.nuevoNombre, onValueChange = { viewModel.nuevoNombre = it }, modifier = Modifier.fillMaxWidth(), label = { Text("Nombre") }, colors = dColors)
+                    OutlinedTextField(value = viewModel.nuevoNombre, onValueChange = { viewModel.nuevoNombre = it }, modifier = Modifier.fillMaxWidth(), label = { Text(strings.machineName) }, colors = dColors)
                     Spacer(Modifier.height(8.dp))
-                    OutlinedTextField(value = viewModel.nuevoTipo, onValueChange = { viewModel.nuevoTipo = it }, modifier = Modifier.fillMaxWidth(), label = { Text("Tipo") }, colors = dColors)
+                    OutlinedTextField(value = viewModel.nuevoTipo, onValueChange = { viewModel.nuevoTipo = it }, modifier = Modifier.fillMaxWidth(), label = { Text(strings.machineType) }, colors = dColors)
                     Spacer(Modifier.height(8.dp))
-                    OutlinedTextField(value = viewModel.nuevaDesc, onValueChange = { viewModel.nuevaDesc = it }, modifier = Modifier.fillMaxWidth(), label = { Text("Descripcion") }, colors = dColors)
+                    OutlinedTextField(value = viewModel.nuevaDesc, onValueChange = { viewModel.nuevaDesc = it }, modifier = Modifier.fillMaxWidth(), label = { Text(strings.machineDescription) }, colors = dColors)
                 }
             },
             confirmButton = {
                 Button(onClick = {
                     viewModel.addMachine(viewModel.nuevoNombre, viewModel.nuevoTipo, viewModel.nuevaDesc)
-                }, colors = ButtonDefaults.buttonColors(containerColor = BlueAccent)) { Text("Anadir", color = Color.White) }
+                }, colors = ButtonDefaults.buttonColors(containerColor = BlueAccent)) { Text(strings.add, color = Color.White) }
             }
         )
     }

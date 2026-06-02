@@ -31,6 +31,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.example.trainium2.data.i18n.LocalStrings
 import com.example.trainium2.ui.theme.*
 import com.example.trainium2.ui.viewmodel.ProfileViewModel
 import kotlinx.coroutines.delay
@@ -41,6 +42,7 @@ fun ProfileScreen(
     isPremium: Boolean,
     darkTheme: Boolean,
     onToggleTheme: () -> Unit,
+    onToggleLanguage: () -> Unit,
     onLogout: () -> Unit,
     onNavigateToEditProfile: () -> Unit,
     onNavigateToMaquinas: () -> Unit,
@@ -50,14 +52,12 @@ fun ProfileScreen(
     onNavigateToHistorial: () -> Unit,
     onNavigateToPremium: () -> Unit
 ) {
+    val strings = LocalStrings.current
     val viewModel = viewModel<ProfileViewModel>()
     var headerVisible by remember { mutableStateOf(false) }
     var buttonsVisible by remember { mutableStateOf(false) }
 
-    LaunchedEffect(userId) {
-        viewModel.loadProfile(userId)
-    }
-
+    LaunchedEffect(userId) { viewModel.loadProfile(userId) }
     LaunchedEffect(Unit) {
         delay(100); headerVisible = true
         delay(250); buttonsVisible = true
@@ -111,12 +111,15 @@ fun ProfileScreen(
             ) {
                 Row(modifier = Modifier.fillMaxWidth().statusBarsPadding(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
                     Row(verticalAlignment = Alignment.CenterVertically) {
+                        IconButton(onClick = onToggleLanguage) {
+                            Icon(Icons.Default.Language, contentDescription = strings.language, tint = topIconTint, modifier = Modifier.size(22.dp))
+                        }
                         IconButton(onClick = onToggleTheme) {
                             Icon(if (darkTheme) Icons.Default.LightMode else Icons.Default.DarkMode, null, tint = topIconTint)
                         }
                         Spacer(Modifier.width(4.dp))
                         IconButton(onClick = onNavigateToEditProfile) {
-                            Icon(Icons.Default.Settings, contentDescription = "Ajustes", tint = topIconTint, modifier = Modifier.size(24.dp))
+                            Icon(Icons.Default.Settings, contentDescription = null, tint = topIconTint, modifier = Modifier.size(24.dp))
                         }
                     }
                     Image(painter = painterResource(if (darkTheme) R.drawable.blanco else R.drawable.negro), contentDescription = "Trainium", modifier = Modifier.height(56.dp))
@@ -139,32 +142,32 @@ fun ProfileScreen(
                         contentAlignment = Alignment.Center
                     ) {
                         if (profileImage != null) {
-                            Image(bitmap = profileImage, contentDescription = "Foto de perfil", modifier = Modifier.fillMaxSize(), contentScale = ContentScale.Crop)
+                            Image(bitmap = profileImage, contentDescription = null, modifier = Modifier.fillMaxSize(), contentScale = ContentScale.Crop)
                         } else {
                             Text(userInitial, fontSize = 46.sp, fontWeight = FontWeight.Black, color = Color.White)
                         }
                     }
                     Spacer(Modifier.height(18.dp))
-                    Text(text = "¡Hola, ${viewModel.usuario?.nombre ?: ""}!", fontSize = 28.sp, fontWeight = FontWeight.Bold, color = titleColor, textAlign = TextAlign.Center)
+                    Text(text = "${strings.hello}, ${viewModel.usuario?.nombre ?: ""}!", fontSize = 28.sp, fontWeight = FontWeight.Bold, color = titleColor, textAlign = TextAlign.Center)
                     if (viewModel.usuario?.admin == 1) {
                         Spacer(Modifier.height(6.dp))
                         Card(shape = RoundedCornerShape(20.dp), colors = CardDefaults.cardColors(containerColor = BlueAccent.copy(0.15f))) {
-                            Text("ADMINISTRADOR", Modifier.padding(horizontal = 16.dp, vertical = 4.dp), fontSize = 12.sp, color = BlueAccent, fontWeight = FontWeight.Bold, letterSpacing = 1.sp)
+                            Text(strings.administrator, Modifier.padding(horizontal = 16.dp, vertical = 4.dp), fontSize = 12.sp, color = BlueAccent, fontWeight = FontWeight.Bold, letterSpacing = 1.sp)
                         }
                     }
                     if (viewModel.usuario?.premium == true || isPremium) {
                         Spacer(Modifier.height(4.dp))
-                        Text("PREMIUM", fontSize = 13.sp, color = Color(0xFFFFD700), fontWeight = FontWeight.Bold, letterSpacing = 2.sp)
+                        Text(strings.premium, fontSize = 13.sp, color = Color(0xFFFFD700), fontWeight = FontWeight.Bold, letterSpacing = 2.sp)
                     }
                 }
 
                 Spacer(Modifier.height(36.dp))
 
                 Column(modifier = Modifier.alpha(buttonsAlpha), verticalArrangement = Arrangement.spacedBy(14.dp), horizontalAlignment = Alignment.CenterHorizontally) {
-                    ProfileMenuCard("Reservar máquinas", Icons.Default.FitnessCenter, "Reserva tu máquina aqui", cardBg, cardIconBg, titleColor, subtitleColor, darkTheme) { onNavigateToMaquinas() }
-                    ProfileMenuCard("Máquinas reservadas", Icons.Default.CalendarMonth, "Tus reservas activas", cardBg, cardIconBg, titleColor, subtitleColor, darkTheme) { onNavigateToReservas() }
-                    ProfileMenuCard("Recomendación de platos", Icons.Default.Restaurant, "Nutrición personalizada", cardBg, cardIconBg, titleColor, subtitleColor, darkTheme) { onNavigateToPlatos() }
-                    ProfileMenuCard("Mi registro de peso", Icons.Default.MonitorWeight, "Seguimiento de progreso", cardBg, cardIconBg, titleColor, subtitleColor, darkTheme) { onNavigateToRegistroPeso() }
+                    ProfileMenuCard(strings.machines, Icons.Default.FitnessCenter, strings.reservations, cardBg, cardIconBg, titleColor, subtitleColor, darkTheme) { onNavigateToMaquinas() }
+                    ProfileMenuCard(strings.reservations, Icons.Default.CalendarMonth, strings.machines, cardBg, cardIconBg, titleColor, subtitleColor, darkTheme) { onNavigateToReservas() }
+                    ProfileMenuCard(strings.dishes, Icons.Default.Restaurant, strings.dishes, cardBg, cardIconBg, titleColor, subtitleColor, darkTheme) { onNavigateToPlatos() }
+                    ProfileMenuCard(strings.weightRecord, Icons.Default.MonitorWeight, strings.history, cardBg, cardIconBg, titleColor, subtitleColor, darkTheme) { onNavigateToRegistroPeso() }
                 }
 
                 Spacer(Modifier.height(32.dp))
@@ -179,7 +182,7 @@ fun ProfileScreen(
                 ) {
                     Icon(Icons.Default.Logout, null, tint = Color(0xFFFF6B6B), modifier = Modifier.size(20.dp))
                     Spacer(Modifier.width(8.dp))
-                    Text("Cerrar Sesión", color = Color(0xFFFF6B6B), fontWeight = FontWeight.SemiBold, fontSize = 15.sp)
+                    Text(strings.logout, color = Color(0xFFFF6B6B), fontWeight = FontWeight.SemiBold, fontSize = 15.sp)
                 }
                 Spacer(Modifier.height(24.dp))
             }
@@ -187,16 +190,18 @@ fun ProfileScreen(
     }
 
     if (viewModel.avisoMantenimiento != null) {
+        val cardBg2 = if (darkTheme) Color(0xFF162347) else Color.White
+        val titleColor2 = if (darkTheme) Color.White else Color(0xFF1A1A2E)
         AlertDialog(
             onDismissRequest = { viewModel.clearMaintenanceWarning() },
             confirmButton = {
                 Button(onClick = { viewModel.clearMaintenanceWarning() }, colors = ButtonDefaults.buttonColors(containerColor = BlueAccent)) {
-                    Text("Entendido", color = Color.White)
+                    Text(strings.understood, color = Color.White)
                 }
             },
-            title = { Text("Aviso de Mantenimiento", fontWeight = FontWeight.Bold) },
-            text = { Text(viewModel.avisoMantenimiento!!, color = titleColor) },
-            containerColor = cardBg
+            title = { Text(strings.maintenanceNotice, fontWeight = FontWeight.Bold) },
+            text = { Text(viewModel.avisoMantenimiento!!, color = titleColor2) },
+            containerColor = cardBg2
         )
     }
 }

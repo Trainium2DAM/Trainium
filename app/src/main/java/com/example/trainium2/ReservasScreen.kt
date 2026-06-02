@@ -31,6 +31,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.trainium2.models.ReservaConDetalles
 import com.example.trainium2.AppConfig
+import com.example.trainium2.data.i18n.LocalStrings
 import com.example.trainium2.ui.theme.*
 import com.example.trainium2.ui.viewmodel.ReservasViewModel
 import androidx.lifecycle.viewmodel.compose.viewModel
@@ -43,8 +44,10 @@ fun ReservasScreen(
     isAdmin: Boolean,
     darkTheme: Boolean,
     onToggleTheme: () -> Unit,
+    onToggleLanguage: () -> Unit,
     onBack: () -> Unit
 ) {
+    val strings = LocalStrings.current
     val viewModel = viewModel<ReservasViewModel>()
 
     val hoyStr = AppConfig.FORMAT_ISO_DATE.format(Date())
@@ -68,8 +71,8 @@ fun ReservasScreen(
         Column(Modifier.fillMaxSize().padding(20.dp)) {
             // --- HEADER ---
             ScreenHeader(
-                title = "Mis Reservas",
-                subtitle = if (isAdmin) "Administración global" else "Tus entrenamientos",
+                title = strings.reservations,
+                subtitle = if (isAdmin) strings.subtitleReservationsAdmin else strings.subtitleReservationsUser,
                 onBack = onBack,
                 trailing = {
                     IconButton(onClick = { viewModel.loadReservations(isAdmin, userId) }) {
@@ -79,19 +82,21 @@ fun ReservasScreen(
                 textColor = textColor,
                 subtitleColor = subtitleColor,
                 onToggleTheme = onToggleTheme,
-                darkTheme = darkTheme
+                darkTheme = darkTheme,
+                onToggleLanguage = onToggleLanguage
             )
 
             Spacer(Modifier.height(16.dp))
 
             // --- FILTROS (Chips + Calendario) ---
             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
-                listOf("Próximas", "Hoy", "Todas").forEach { texto ->
-                    val sel = viewModel.filtroSeleccionado == texto
+                val filters = listOf("upcoming" to strings.filterUpcoming, "today" to strings.today, "all" to strings.filterAll)
+                filters.forEach { (key, label) ->
+                    val sel = viewModel.filtroSeleccionado == key
                     FilterChip(
                         selected = sel,
-                        onClick = { viewModel.setFilter(texto) },
-                        label = { Text(texto) },
+                        onClick = { viewModel.setFilter(key) },
+                        label = { Text(label) },
                         colors = FilterChipDefaults.filterChipColors(
                             selectedContainerColor = BlueAccent,
                             selectedLabelColor = Color.White,
@@ -104,14 +109,14 @@ fun ReservasScreen(
 
                 IconButton(
                     onClick = { mostrarDatePickerReserva = true },
-                    modifier = Modifier.size(32.dp).background(if(viewModel.filtroSeleccionado == "Fecha") BlueAccent else Color.Transparent, CircleShape)
+                    modifier = Modifier.size(32.dp).background(if(viewModel.filtroSeleccionado == "date") BlueAccent else Color.Transparent, CircleShape)
                 ) {
-                    Icon(Icons.Default.CalendarToday, null, tint = if(viewModel.filtroSeleccionado == "Fecha") Color.White else BlueAccent, modifier = Modifier.size(18.dp))
+                    Icon(Icons.Default.CalendarToday, null, tint = if(viewModel.filtroSeleccionado == "date") Color.White else BlueAccent, modifier = Modifier.size(18.dp))
                 }
             }
 
-            if (viewModel.filtroSeleccionado == "Fecha") {
-                Text("Filtrando día: ${viewModel.fechaFiltroManual}", fontSize = 12.sp, color = BlueAccent, fontWeight = FontWeight.Bold, modifier = Modifier.padding(top = 8.dp))
+            if (viewModel.filtroSeleccionado == "date") {
+                Text("${strings.filteringDay} ${viewModel.fechaFiltroManual}", fontSize = 12.sp, color = BlueAccent, fontWeight = FontWeight.Bold, modifier = Modifier.padding(top = 8.dp))
             }
 
             Spacer(Modifier.height(12.dp))
@@ -127,11 +132,11 @@ fun ReservasScreen(
                 }
             } else if (viewModel.error != null) {
                 Box(Modifier.fillMaxWidth().weight(1f), contentAlignment = Alignment.Center) {
-                    Text("Error de conexión", color = textColor)
+                    Text(strings.connectionError, color = textColor)
                 }
             } else if (reservasFiltradas.isEmpty()) {
                 Box(Modifier.fillMaxWidth().weight(1f), contentAlignment = Alignment.Center) {
-                    Text("No hay reservas programadas", color = textColor.copy(0.4f))
+                    Text(strings.noReservations, color = textColor.copy(0.4f))
                 }
             } else {
                 LazyColumn(verticalArrangement = Arrangement.spacedBy(10.dp), modifier = Modifier.weight(1f)) {
@@ -157,14 +162,14 @@ fun ReservasScreen(
 
                                 Spacer(Modifier.width(14.dp))
                                 Column(Modifier.weight(1f)) {
-                                    Text(r.maquina?.nombre ?: "Equipo", fontWeight = FontWeight.Bold, color = textColor, fontSize = 15.sp)
+                                    Text(r.maquina?.nombre ?: strings.equipment, fontWeight = FontWeight.Bold, color = textColor, fontSize = 15.sp)
                                     Text(
-                                        text = if (esHoy) "HOY: ${r.horaInicio.take(5)} - ${r.horaFin.take(5)}"
+                                        text = if (esHoy) "${strings.today.uppercase()}: ${r.horaInicio.take(5)} - ${r.horaFin.take(5)}"
                                         else "${r.fecha} | ${r.horaInicio.take(5)} - ${r.horaFin.take(5)}",
                                         fontSize = 12.sp, color = if (esHoy) BlueAccent else subtitleColor,
                                         fontWeight = if (esHoy) FontWeight.Black else FontWeight.Normal
                                     )
-                                    if (isAdmin) Text("${r.usuario?.nombre ?: "Usuario"}", fontSize = 11.sp, color = textColor.copy(0.5f))
+                                    if (isAdmin) Text(r.usuario?.nombre ?: strings.userLabel, fontSize = 11.sp, color = textColor.copy(0.5f))
                                 }
                                 IconButton(onClick = {
                                     viewModel.deleteReservation(r.id) {
@@ -196,12 +201,12 @@ fun ReservasScreen(
                         val cal = Calendar.getInstance().apply { timeInMillis = mReserva }
                         val fechaSel = String.format("%d-%02d-%02d", cal.get(Calendar.YEAR), cal.get(Calendar.MONTH) + 1, cal.get(Calendar.DAY_OF_MONTH))
                         viewModel.setDateFilter(fechaSel)
-                        viewModel.setFilter("Fecha")
+                        viewModel.setFilter("date")
                         mostrarDatePickerReserva = false
                     } else { mostrarDatePickerReserva = false }
-                }) { Text("OK", color = MaterialTheme.colorScheme.primary, fontWeight = FontWeight.Bold) }
+                }) { Text(strings.ok, color = MaterialTheme.colorScheme.primary, fontWeight = FontWeight.Bold) }
             },
-            dismissButton = { TextButton(onClick = { mostrarDatePickerReserva = false }) { Text("Cancelar", color = textColor.copy(0.5f)) } },
+            dismissButton = { TextButton(onClick = { mostrarDatePickerReserva = false }) { Text(strings.cancel, color = textColor.copy(0.5f)) } },
             colors = DatePickerDefaults.colors(
                 selectedDayContentColor = Color.White, selectedDayContainerColor = BlueAccent,
                 todayContentColor = BlueAccent, todayDateBorderColor = BlueAccent,
