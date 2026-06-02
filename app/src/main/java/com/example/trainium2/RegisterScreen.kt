@@ -35,17 +35,10 @@ import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.example.trainium2.models.Usuario
-import com.example.trainium2.DbColumns
-import com.example.trainium2.DbTables
 import com.example.trainium2.ui.theme.*
-import io.github.jan.supabase.postgrest.from
-import kotlinx.coroutines.Dispatchers
+import androidx.lifecycle.viewmodel.compose.viewModel
+import com.example.trainium2.ui.viewmodel.RegisterViewModel
 import kotlinx.coroutines.delay
-import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
-import kotlinx.serialization.json.buildJsonObject
-import kotlinx.serialization.json.put
 
 private val PREFIJOS_PAIS = listOf(
     "+34" to "🇪🇸 España",
@@ -107,14 +100,7 @@ private val PREFIJOS_PAIS = listOf(
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun RegisterScreen(isDarkTheme: Boolean, onToggleTheme: () -> Unit, onBack: () -> Unit) {
-    var nombre by remember { mutableStateOf("") }
-    var dni by remember { mutableStateOf("") }
-    var email by remember { mutableStateOf("") }
-    var pass by remember { mutableStateOf("") }
-    var prefijo by remember { mutableStateOf("+34") }
-    var numeroTelf by remember { mutableStateOf("") }
-    var prefijoDesplegado by remember { mutableStateOf(false) }
-    val scope = rememberCoroutineScope()
+    val viewModel = viewModel<RegisterViewModel>()
     val context = LocalContext.current
 
     var iconVisible by remember { mutableStateOf(false) }
@@ -127,6 +113,20 @@ fun RegisterScreen(isDarkTheme: Boolean, onToggleTheme: () -> Unit, onBack: () -
         delay(120); titleVisible = true
         delay(150); formVisible = true
         delay(150); btnVisible = true
+    }
+
+    LaunchedEffect(viewModel.errorMessage) {
+        viewModel.errorMessage?.let {
+            Toast.makeText(context, it, Toast.LENGTH_SHORT).show()
+            viewModel.clearError()
+        }
+    }
+
+    LaunchedEffect(viewModel.successMessage) {
+        viewModel.successMessage?.let {
+            Toast.makeText(context, it, Toast.LENGTH_SHORT).show()
+            viewModel.clearSuccess()
+        }
     }
 
     val iconAlpha by animateFloatAsState(if (iconVisible) 1f else 0f, tween(700), label = "ia")
@@ -195,42 +195,42 @@ fun RegisterScreen(isDarkTheme: Boolean, onToggleTheme: () -> Unit, onBack: () -
                 Column(Modifier.padding(20.dp)) {
                     Text("DATOS PERSONALES", fontSize = 11.sp, color = textColor.copy(0.3f), fontWeight = FontWeight.Bold, letterSpacing = 2.sp)
                     Spacer(Modifier.height(14.dp))
-                    OutlinedTextField(value = nombre, onValueChange = { nombre = it }, modifier = Modifier.fillMaxWidth(), label = { Text("Nombre completo") }, singleLine = true, shape = RoundedCornerShape(14.dp), colors = inputColors, leadingIcon = { Icon(Icons.Default.Person, null, tint = BlueAccent.copy(0.6f)) })
+                    OutlinedTextField(value = viewModel.nombre, onValueChange = { viewModel.nombre = it }, modifier = Modifier.fillMaxWidth(), label = { Text("Nombre completo") }, singleLine = true, shape = RoundedCornerShape(14.dp), colors = inputColors, leadingIcon = { Icon(Icons.Default.Person, null, tint = BlueAccent.copy(0.6f)) })
                     Spacer(Modifier.height(10.dp))
-                    OutlinedTextField(value = dni, onValueChange = { dni = it.uppercase() }, modifier = Modifier.fillMaxWidth(), label = { Text("DNI / NIE / Documento extranjero") }, singleLine = true, shape = RoundedCornerShape(14.dp), colors = inputColors, leadingIcon = { Icon(Icons.Default.Badge, null, tint = BlueAccent.copy(0.6f)) })
+                    OutlinedTextField(value = viewModel.dni, onValueChange = { viewModel.dni = it.uppercase() }, modifier = Modifier.fillMaxWidth(), label = { Text("DNI / NIE / Documento extranjero") }, singleLine = true, shape = RoundedCornerShape(14.dp), colors = inputColors, leadingIcon = { Icon(Icons.Default.Badge, null, tint = BlueAccent.copy(0.6f)) })
                     Spacer(Modifier.height(10.dp))
-                    OutlinedTextField(value = email, onValueChange = { email = it }, modifier = Modifier.fillMaxWidth(), label = { Text("Email") }, singleLine = true, shape = RoundedCornerShape(14.dp), colors = inputColors, leadingIcon = { Icon(Icons.Default.Email, null, tint = BlueAccent.copy(0.6f)) })
+                    OutlinedTextField(value = viewModel.email, onValueChange = { viewModel.email = it }, modifier = Modifier.fillMaxWidth(), label = { Text("Email") }, singleLine = true, shape = RoundedCornerShape(14.dp), colors = inputColors, leadingIcon = { Icon(Icons.Default.Email, null, tint = BlueAccent.copy(0.6f)) })
                     Spacer(Modifier.height(10.dp))
-                    OutlinedTextField(value = pass, onValueChange = { pass = it }, modifier = Modifier.fillMaxWidth(), label = { Text("Contraseña") }, singleLine = true, visualTransformation = PasswordVisualTransformation(), shape = RoundedCornerShape(14.dp), colors = inputColors, leadingIcon = { Icon(Icons.Default.Lock, null, tint = BlueAccent.copy(0.6f)) })
+                    OutlinedTextField(value = viewModel.pass, onValueChange = { viewModel.pass = it }, modifier = Modifier.fillMaxWidth(), label = { Text("Contraseña") }, singleLine = true, visualTransformation = PasswordVisualTransformation(), shape = RoundedCornerShape(14.dp), colors = inputColors, leadingIcon = { Icon(Icons.Default.Lock, null, tint = BlueAccent.copy(0.6f)) })
                     Spacer(Modifier.height(10.dp))
 
                     Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                         ExposedDropdownMenuBox(
-                            expanded = prefijoDesplegado,
-                            onExpandedChange = { prefijoDesplegado = it },
+                            expanded = viewModel.prefijoDesplegado,
+                            onExpandedChange = { viewModel.prefijoDesplegado = it },
                             modifier = Modifier.width(115.dp)
                         ) {
                             OutlinedTextField(
-                                value = prefijo,
+                                value = viewModel.prefijo,
                                 onValueChange = {},
                                 readOnly = true,
                                 singleLine = true,
                                 label = { Text("Prefijo") },
-                                trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = prefijoDesplegado) },
+                                trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = viewModel.prefijoDesplegado) },
                                 shape = RoundedCornerShape(14.dp),
                                 colors = inputColors,
                                 modifier = Modifier.menuAnchor()
                             )
                             ExposedDropdownMenu(
-                                expanded = prefijoDesplegado,
-                                onDismissRequest = { prefijoDesplegado = false }
+                                expanded = viewModel.prefijoDesplegado,
+                                onDismissRequest = { viewModel.prefijoDesplegado = false }
                             ) {
-                                PREFIJOS_PAIS.forEach { (codigo, nombre) ->
+                                PREFIJOS_PAIS.forEach { (codigo, nombrePais) ->
                                     DropdownMenuItem(
-                                        text = { Text("$codigo  $nombre", fontSize = 12.sp) },
+                                        text = { Text("$codigo  $nombrePais", fontSize = 12.sp) },
                                         onClick = {
-                                            prefijo = codigo
-                                            prefijoDesplegado = false
+                                            viewModel.prefijo = codigo
+                                            viewModel.prefijoDesplegado = false
                                         }
                                     )
                                 }
@@ -238,8 +238,8 @@ fun RegisterScreen(isDarkTheme: Boolean, onToggleTheme: () -> Unit, onBack: () -
                         }
 
                         OutlinedTextField(
-                            value = numeroTelf,
-                            onValueChange = { numeroTelf = it.filter { c -> c.isDigit() } },
+                            value = viewModel.numeroTelf,
+                            onValueChange = { viewModel.numeroTelf = it.filter { c -> c.isDigit() } },
                             modifier = Modifier.weight(1f),
                             label = { Text("Número") },
                             singleLine = true,
@@ -255,57 +255,7 @@ fun RegisterScreen(isDarkTheme: Boolean, onToggleTheme: () -> Unit, onBack: () -
             Spacer(Modifier.height(22.dp))
 
             Button(
-                onClick = {
-                    if (nombre.isEmpty() || dni.isEmpty() || email.isEmpty() || pass.isEmpty() || numeroTelf.isEmpty()) {
-                        Toast.makeText(context, "Por favor, rellena todos los campos", Toast.LENGTH_SHORT).show(); return@Button
-                    }
-                    val dniEspRegex = Regex("^[0-9]{8}[A-Z]$")
-                    val nieEspRegex = Regex("^[XYZ][0-9]{7}[A-Z]$")
-                    val docExtranjeroRegex = Regex("^[A-Z0-9]{5,20}$")
-                    if (!dni.matches(dniEspRegex) && !dni.matches(nieEspRegex) && !dni.matches(docExtranjeroRegex)) {
-                        Toast.makeText(context, "Documento de identidad inválido", Toast.LENGTH_SHORT).show(); return@Button
-                    }
-                    if (numeroTelf.length < 7) {
-                        Toast.makeText(context, "Número de teléfono inválido", Toast.LENGTH_SHORT).show(); return@Button
-                    }
-                    val telefonoFinal = numeroTelf
-                    scope.launch {
-                        try {
-                            val exists = withContext(Dispatchers.IO) {
-                                SupabaseClient.client.from(DbTables.USUARIOS)
-                                    .select { filter { eq(DbColumns.DNI, dni) } }
-                                    .decodeList<Usuario>().isNotEmpty()
-                            }
-
-                            if (exists) {
-                                withContext(Dispatchers.Main) { Toast.makeText(context, "El documento ya está registrado", Toast.LENGTH_SHORT).show() }
-                                } else {
-                                withContext(Dispatchers.IO) {
-                                    SupabaseClient.client.from(DbTables.USUARIOS).insert(
-                                        buildJsonObject {
-                                            put(DbColumns.NOMBRE, nombre)
-                                            put(DbColumns.DNI, dni)
-                                            put("email", email)
-                                            put("contraseniaHash", pass)
-                                            put("telefono", telefonoFinal)
-                                            put(DbColumns.ADMIN, 0)
-                                            put(DbColumns.PREMIUM, false)
-                                        }
-                                    )
-                                }
-
-                                withContext(Dispatchers.Main) {
-                                    Toast.makeText(context, "Registro completado con éxito", Toast.LENGTH_LONG).show()
-                                    onBack()
-                                }
-                            }
-                        } catch (e: Exception) {
-                            withContext(Dispatchers.Main) {
-                                Toast.makeText(context, "Error al registrar: ${e.message}", Toast.LENGTH_SHORT).show()
-                            }
-                        }
-                    }
-                },
+                onClick = { viewModel.register(onBack) },
                 modifier = Modifier.fillMaxWidth().height(56.dp).alpha(btnAlpha),
                 shape = RoundedCornerShape(16.dp),
                 colors = ButtonDefaults.buttonColors(containerColor = Color.Transparent), contentPadding = PaddingValues()

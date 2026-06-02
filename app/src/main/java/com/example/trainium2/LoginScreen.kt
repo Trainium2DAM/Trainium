@@ -31,16 +31,10 @@ import androidx.compose.material3.Icon
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.example.trainium2.models.Usuario
-import com.example.trainium2.DbColumns
-import com.example.trainium2.DbTables
-import com.example.trainium2.SecureSessionManager
 import com.example.trainium2.ui.theme.*
-import io.github.jan.supabase.postgrest.from
-import kotlinx.coroutines.Dispatchers
+import androidx.lifecycle.viewmodel.compose.viewModel
+import com.example.trainium2.ui.viewmodel.LoginViewModel
 import kotlinx.coroutines.delay
-import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
 
 @Composable
 fun LoginScreen(
@@ -51,9 +45,7 @@ fun LoginScreen(
     onNavigateToForgot: () -> Unit,
     onLoginSuccess: (String, Int, Int, Int) -> Unit
 ) {
-    var dni by remember { mutableStateOf("") }
-    var pass by remember { mutableStateOf("") }
-    val scope = rememberCoroutineScope()
+    val viewModel = viewModel<LoginViewModel>()
     val context = LocalContext.current
 
     var logoVisible by remember { mutableStateOf(false) }
@@ -68,6 +60,13 @@ fun LoginScreen(
         delay(150); formVisible = true
         delay(150); btnVisible = true
         delay(100); linksVisible = true
+    }
+
+    LaunchedEffect(viewModel.errorMessage) {
+        viewModel.errorMessage?.let {
+            Toast.makeText(context, it, Toast.LENGTH_SHORT).show()
+            viewModel.clearError()
+        }
     }
 
     val logoAlpha by animateFloatAsState(if (logoVisible) 1f else 0f, tween(700), label = "la")
@@ -143,14 +142,14 @@ fun LoginScreen(
                     Text("CREDENCIALES", fontSize = 11.sp, color = textColor.copy(0.3f), fontWeight = FontWeight.Bold, letterSpacing = 2.sp)
                     Spacer(Modifier.height(14.dp))
                     OutlinedTextField(
-                        value = dni, onValueChange = { dni = it.uppercase() },
+                        value = viewModel.dni, onValueChange = { viewModel.dni = it.uppercase() },
                         label = { Text("DNI") }, modifier = Modifier.fillMaxWidth(), singleLine = true,
                         shape = RoundedCornerShape(14.dp), colors = inputColors,
                         leadingIcon = { Icon(Icons.Default.Badge, null, tint = BlueAccent.copy(0.6f)) }
                     )
                     Spacer(Modifier.height(12.dp))
                     OutlinedTextField(
-                        value = pass, onValueChange = { pass = it },
+                        value = viewModel.pass, onValueChange = { viewModel.pass = it },
                         label = { Text("Contraseña") }, visualTransformation = PasswordVisualTransformation(),
                         modifier = Modifier.fillMaxWidth(), singleLine = true,
                         shape = RoundedCornerShape(14.dp), colors = inputColors,
@@ -162,42 +161,7 @@ fun LoginScreen(
             Spacer(Modifier.height(24.dp))
 
             Button(
-                onClick = {
-                    scope.launch {
-                        try {
-                            val user = withContext(Dispatchers.IO) {
-                                SupabaseClient.client.from(DbTables.USUARIOS)
-                                    .select {
-                                        filter {
-                                            eq(DbColumns.DNI, dni)
-                                        }
-                                    }.decodeSingleOrNull<Usuario>()
-                            }
-
-                            withContext(Dispatchers.Main) {
-                                if (user != null) {
-                                    if (user.contraseniaHash == pass) {
-                                        SecureSessionManager.iniciarSesion(user.id, user.nombre, user.admin == 1, user.premium)
-                                        onLoginSuccess(
-                                            user.nombre,
-                                            user.admin,
-                                            user.id,
-                                            if (user.premium) 1 else 0
-                                        )
-                                    } else {
-                                        Toast.makeText(context, "Contraseña incorrecta", Toast.LENGTH_SHORT).show()
-                                    }
-                                } else {
-                                    Toast.makeText(context, "Usuario no encontrado", Toast.LENGTH_SHORT).show()
-                                }
-                            }
-                        } catch (e: Exception) {
-                            withContext(Dispatchers.Main) {
-                                Toast.makeText(context, "Error: ${e.message}", Toast.LENGTH_LONG).show()
-                            }
-                        }
-                    }
-                },
+                onClick = { viewModel.login(onSuccess = onLoginSuccess) },
                 modifier = Modifier.fillMaxWidth().height(56.dp).scale(btnScale).alpha(btnAlpha),
                 shape = RoundedCornerShape(16.dp),
                 colors = ButtonDefaults.buttonColors(containerColor = Color.Transparent),

@@ -34,174 +34,71 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.trainium2.models.Plato
-import com.example.trainium2.DbColumns
-import com.example.trainium2.DbTables
 import com.example.trainium2.ui.theme.*
-import io.github.jan.supabase.postgrest.from
-import kotlinx.coroutines.Dispatchers
+import com.example.trainium2.ui.viewmodel.PlatosViewModel
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
-import java.util.Calendar
 
 @Composable
-fun PlatosScreen(isAdmin: Boolean, idUsuario: Int, isDarkTheme: Boolean, onToggleTheme: () -> Unit, onBack: () -> Unit) {
-    var listaPlatosAceptados by remember { mutableStateOf(listOf<Plato>()) }
-    var indicePlatoActual by remember { mutableIntStateOf(0) }
-    var sugerenciasPendientes by remember { mutableStateOf(listOf<Plato>()) }
-    var cargando by remember { mutableStateOf(true) }
-    var errorMsg by remember { mutableStateOf("") }
-    val scope = rememberCoroutineScope()
+fun PlatosScreen(
+    userId: Int,
+    isAdmin: Boolean,
+    darkTheme: Boolean,
+    onToggleTheme: () -> Unit,
+    onBack: () -> Unit
+) {
+    val viewModel = viewModel<PlatosViewModel>()
     val context = LocalContext.current
+    val scope = rememberCoroutineScope()
 
-    val platoActual = listaPlatosAceptados.getOrNull(indicePlatoActual)
-
-    // Diálogo sugerencia
-    var mostrarDialogoSugerencia by remember { mutableStateOf(false) }
-    var nuevoTitulo by remember { mutableStateOf("") }
-    var nuevaReceta by remember { mutableStateOf("") }
-    var nuevoTiempo by remember { mutableStateOf("") }
-    var caloriasTexto by remember { mutableStateOf("") }
-    var fotoBase64 by remember { mutableStateOf<String?>(null) }
+    val platoActual = viewModel.listaPlatosAceptados.getOrNull(viewModel.indicePlatoActual)
 
     val launcher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.GetContent()
     ) { uri: Uri? ->
         uri?.let {
             scope.launch {
-                val base64 = withContext(Dispatchers.IO) { uriToBase64(it, context.contentResolver) }
-                fotoBase64 = base64
+                val base64 = uriToBase64(it, context.contentResolver)
+                viewModel.fotoBase64 = base64
             }
+        }
+    }
+
+    LaunchedEffect(Unit) { viewModel.loadPlatos(isAdmin) }
+
+    LaunchedEffect(viewModel.error) {
+        viewModel.error?.let { msg ->
+            Toast.makeText(context, msg, Toast.LENGTH_SHORT).show()
+            viewModel.clearError()
         }
     }
 
     var visible by remember { mutableStateOf(false) }
     val alphaAnim by animateFloatAsState(if (visible) 1f else 0f, tween(800), label = "alpha")
 
-    val textColor = if (isDarkTheme) Color.White else BlueDark
-    val subtitleColor = if (isDarkTheme) Color.White.copy(0.35f) else BlueDark.copy(0.4f)
-    val cardBg = if (isDarkTheme) Color(0xFF162347) else Color.White
-
-    val bgBrush = if (isDarkTheme) Brush.verticalGradient(listOf(BlueDark, BlueMid, BlueDeep))
-    else Brush.verticalGradient(listOf(Color(0xFFF0F4FF), Color(0xFFE3ECFF), Color(0xFFD6E4FF)))
-
-    fun cargarDatos() {
-        cargando = true
-        errorMsg = ""
-        visible = false
-        scope.launch {
-            try {
-                // Cargar platos aceptados (visibles)
-                val aceptados = withContext(Dispatchers.IO) {
-                    SupabaseClient.client.from(DbTables.PLATOS)
-                        .select {
-                            filter {
-                                eq(DbColumns.VISIBILIDAD, true)
-                                eq(DbColumns.ACEPTADO, true)
-                            }
-                        }
-                        .decodeList<Plato>()
-                }
-
-                // Si es Admin, cargar sugerencias pendientes
-                if (isAdmin) {
-                    val pendientes = withContext(Dispatchers.IO) {
-                        SupabaseClient.client.from(DbTables.PLATOS)
-                            .select {
-                                filter { eq(DbColumns.ACEPTADO, false) }
-                            }
-                            .decodeList<Plato>()
-                    }
-                    sugerenciasPendientes = pendientes
-                }
-
-                withContext(Dispatchers.Main) {
-                    listaPlatosAceptados = aceptados
-                    if (aceptados.isNotEmpty()) {
-                        // Inicializar con el plato del día basado en la fecha
-                        val dia = Calendar.getInstance().get(Calendar.DAY_OF_YEAR)
-                        indicePlatoActual = dia % aceptados.size
-                        delay(100)
-                        visible = true
-                    }
-                    cargando = false
-                }
-            } catch (e: Exception) {
-                withContext(Dispatchers.Main) {
-                    errorMsg = "Error: ${e.message}"
-                    cargando = false
-                }
-            }
+    LaunchedEffect(viewModel.isLoading) {
+        if (!viewModel.isLoading && viewModel.error == null && viewModel.listaPlatosAceptados.isNotEmpty()) {
+            delay(100)
+            visible = true
         }
     }
 
-    LaunchedEffect(Unit) { cargarDatos() }
+    val textColor = if (darkTheme) Color.White else BlueDark
+    val subtitleColor = if (darkTheme) Color.White.copy(0.35f) else BlueDark.copy(0.4f)
+    val cardBg = if (darkTheme) Color(0xFF162347) else Color.White
+
+    val bgBrush = if (darkTheme) Brush.verticalGradient(listOf(BlueDark, BlueMid, BlueDeep))
+    else Brush.verticalGradient(listOf(Color(0xFFF0F4FF), Color(0xFFE3ECFF), Color(0xFFD6E4FF)))
 
     fun enviarSugerencia() {
-        if (nuevoTitulo.isEmpty() || nuevaReceta.isEmpty() || nuevoTiempo.isEmpty()) {
+        if (viewModel.nuevoTitulo.isEmpty() || viewModel.nuevaReceta.isEmpty() || viewModel.nuevoTiempo.isEmpty()) {
             Toast.makeText(context, "Por favor, completa los campos", Toast.LENGTH_SHORT).show()
             return
         }
-        val cal = caloriasTexto.replace(",", ".").toDoubleOrNull() ?: 0.0
-        scope.launch {
-            try {
-                val nueva = Plato(
-                    idUsuario = idUsuario,
-                    nombre = nuevoTitulo,
-                    descripcion = nuevaReceta,
-                    calorias = cal,
-                    imagenUrl = fotoBase64,
-                    visibilidad = true,
-                    tiempo = nuevoTiempo,
-                    aceptado = false
-                )
-                withContext(Dispatchers.IO) {
-                    SupabaseClient.client.from(DbTables.PLATOS).insert(nueva)
-                }
-                withContext(Dispatchers.Main) {
-                    Toast.makeText(context, "Sugerencia enviada al administrador", Toast.LENGTH_LONG).show()
-                    mostrarDialogoSugerencia = false
-                    nuevoTitulo = ""; nuevaReceta = ""; nuevoTiempo = ""; caloriasTexto = ""; fotoBase64 = null
-                    cargarDatos()
-                }
-            } catch (e: Exception) {
-                withContext(Dispatchers.Main) {
-                    Toast.makeText(context, "Error: ${e.message}", Toast.LENGTH_SHORT).show()
-                }
-            }
-        }
-    }
-
-    fun aprobarSugerencia(plato: Plato) {
-        val pId = plato.id ?: return
-        scope.launch {
-            try {
-                withContext(Dispatchers.IO) {
-                    SupabaseClient.client.from(DbTables.PLATOS).update({
-                        set(DbColumns.ACEPTADO, true)
-                    }) { filter { eq(DbColumns.ID, pId) } }
-                }
-                withContext(Dispatchers.Main) {
-                    Toast.makeText(context, "Plato aprobado", Toast.LENGTH_SHORT).show()
-                    cargarDatos()
-                }
-            } catch (e: Exception) { e.printStackTrace() }
-        }
-    }
-
-    fun rechazarSugerencia(plato: Plato) {
-        val pId = plato.id ?: return
-        scope.launch {
-            try {
-                withContext(Dispatchers.IO) {
-                    SupabaseClient.client.from(DbTables.PLATOS).delete { filter { eq(DbColumns.ID, pId) } }
-                }
-                withContext(Dispatchers.Main) {
-                    Toast.makeText(context, "Sugerencia eliminada", Toast.LENGTH_SHORT).show()
-                    cargarDatos()
-                }
-            } catch (e: Exception) { e.printStackTrace() }
+        viewModel.enviarSugerencia(userId) {
+            viewModel.loadPlatos(isAdmin)
         }
     }
 
@@ -213,19 +110,19 @@ fun PlatosScreen(isAdmin: Boolean, idUsuario: Int, isDarkTheme: Boolean, onToggl
                 subtitle = "Recomendación diaria",
                 onBack = onBack,
                 trailing = {
-                    IconButton(onClick = { cargarDatos() }) {
+                    IconButton(onClick = { visible = false; viewModel.loadPlatos(isAdmin) }) {
                         Icon(Icons.Default.Refresh, null, tint = BlueAccent)
                     }
                 },
                 textColor = textColor,
                 subtitleColor = subtitleColor,
                 onToggleTheme = onToggleTheme,
-                darkTheme = isDarkTheme
+                darkTheme = darkTheme
             )
 
             Spacer(Modifier.height(10.dp))
             Button(
-                onClick = { mostrarDialogoSugerencia = true },
+                onClick = { viewModel.showingDialogoSugerencia = true },
                 modifier = Modifier.fillMaxWidth().height(48.dp),
                 shape = RoundedCornerShape(14.dp),
                 colors = ButtonDefaults.buttonColors(containerColor = BlueAccent)
@@ -236,16 +133,16 @@ fun PlatosScreen(isAdmin: Boolean, idUsuario: Int, isDarkTheme: Boolean, onToggl
             }
             Spacer(Modifier.height(20.dp))
 
-            if (cargando) {
+            if (viewModel.isLoading) {
                 Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.fillMaxWidth()) {
                     SkeletonCircle(size = 130)
                     Spacer(Modifier.height(24.dp))
                     SkeletonCard(modifier = Modifier.fillMaxWidth(), height = 200)
                 }
-            } else if (errorMsg.isNotEmpty()) {
+            } else if (viewModel.error != null) {
                 Column(Modifier.fillMaxWidth(), horizontalAlignment = Alignment.CenterHorizontally) {
-                    Text("$errorMsg", color = textColor)
-                    Button(onClick = { cargarDatos() }, Modifier.padding(top = 16.dp)) { Text("Reintentar") }
+                    Text("${viewModel.error}", color = textColor)
+                    Button(onClick = { viewModel.loadPlatos(isAdmin) }, Modifier.padding(top = 16.dp)) { Text("Reintentar") }
                 }
             } else {
                 // Plato Actual con Animación de Transición
@@ -260,7 +157,7 @@ fun PlatosScreen(isAdmin: Boolean, idUsuario: Int, isDarkTheme: Boolean, onToggl
                     if (plato != null) {
                         Column(horizontalAlignment = Alignment.CenterHorizontally) {
                             Text(
-                                text = "RECOMENDACIÓN ${indicePlatoActual + 1} DE ${listaPlatosAceptados.size}",
+                                text = "RECOMENDACIÓN ${viewModel.indicePlatoActual + 1} DE ${viewModel.listaPlatosAceptados.size}",
                                 fontSize = 10.sp,
                                 fontWeight = FontWeight.Black,
                                 color = BlueAccent.copy(0.7f),
@@ -318,12 +215,10 @@ fun PlatosScreen(isAdmin: Boolean, idUsuario: Int, isDarkTheme: Boolean, onToggl
                 }
 
                 // Botón Siguiente (Ciclo infinito: 1 -> 2 -> ... -> N -> 1)
-                if (listaPlatosAceptados.size > 1) {
+                if (viewModel.listaPlatosAceptados.size > 1) {
                     Spacer(Modifier.height(24.dp))
                     Button(
-                        onClick = {
-                            indicePlatoActual = (indicePlatoActual + 1) % listaPlatosAceptados.size
-                        },
+                        onClick = { viewModel.nextDish() },
                         modifier = Modifier.fillMaxWidth().height(56.dp).alpha(alphaAnim),
                         shape = RoundedCornerShape(16.dp),
                         colors = ButtonDefaults.buttonColors(containerColor = BlueAccent.copy(0.12f), contentColor = BlueAccent)
@@ -335,12 +230,12 @@ fun PlatosScreen(isAdmin: Boolean, idUsuario: Int, isDarkTheme: Boolean, onToggl
                 }
 
                 // Sugerencias Pendientes (Sólo Admin)
-                if (isAdmin && sugerenciasPendientes.isNotEmpty()) {
+                if (isAdmin && viewModel.sugerenciasPendientes.isNotEmpty()) {
                     Spacer(Modifier.height(40.dp))
                     Text("SUGERENCIAS PENDIENTES", fontSize = 12.sp, fontWeight = FontWeight.Black, color = BlueAccent, letterSpacing = 2.sp)
                     Spacer(Modifier.height(12.dp))
 
-                    sugerenciasPendientes.forEach { sug ->
+                    viewModel.sugerenciasPendientes.forEach { sug ->
                         Card(Modifier.fillMaxWidth().padding(vertical = 6.dp), shape = RoundedCornerShape(16.dp), colors = CardDefaults.cardColors(containerColor = cardBg)) {
                             Row(Modifier.padding(14.dp), verticalAlignment = Alignment.CenterVertically) {
                                 if (!sug.imagenUrl.isNullOrEmpty()) {
@@ -353,8 +248,8 @@ fun PlatosScreen(isAdmin: Boolean, idUsuario: Int, isDarkTheme: Boolean, onToggl
                                     Text("Tiempo: ${sug.tiempo ?: "N/D"}", fontSize = 12.sp, color = subtitleColor)
                                 }
                                 Row {
-                                    IconButton(onClick = { aprobarSugerencia(sug) }) { Icon(Icons.Default.Check, null, tint = Color(0xFF00E676)) }
-                                    IconButton(onClick = { rechazarSugerencia(sug) }) { Icon(Icons.Default.Close, null, tint = Color(0xFFFF6B6B)) }
+                                    IconButton(onClick = { viewModel.aprobarSugerencia(sug.id ?: return@IconButton); viewModel.loadPlatos(isAdmin) }) { Icon(Icons.Default.Check, null, tint = Color(0xFF00E676)) }
+                                    IconButton(onClick = { viewModel.rechazarSugerencia(sug.id ?: return@IconButton); viewModel.loadPlatos(isAdmin) }) { Icon(Icons.Default.Close, null, tint = Color(0xFFFF6B6B)) }
                                 }
                             }
                         }
@@ -365,25 +260,25 @@ fun PlatosScreen(isAdmin: Boolean, idUsuario: Int, isDarkTheme: Boolean, onToggl
     }
 
     // Diálogo para sugerir plato
-    if (mostrarDialogoSugerencia) {
+    if (viewModel.showingDialogoSugerencia) {
         val dColors = OutlinedTextFieldDefaults.colors(focusedTextColor = textColor, unfocusedTextColor = textColor, focusedBorderColor = BlueAccent, unfocusedBorderColor = textColor.copy(0.2f), focusedLabelColor = BlueAccent)
         AlertDialog(
-            onDismissRequest = { mostrarDialogoSugerencia = false },
+            onDismissRequest = { viewModel.showingDialogoSugerencia = false },
             containerColor = cardBg,
             title = { Text("Sugerir Receta", color = textColor, fontWeight = FontWeight.Bold) },
             text = {
                 Column(Modifier.verticalScroll(rememberScrollState())) {
                     Box(Modifier.fillMaxWidth().height(120.dp).background(textColor.copy(0.05f), RoundedCornerShape(12.dp)).clip(RoundedCornerShape(12.dp)).clickable { launcher.launch("image/*") }, contentAlignment = Alignment.Center) {
-                        if (!fotoBase64.isNullOrEmpty()) {
-                            val bitmap = decodeBase64ToBitmap(fotoBase64!!)
+                        if (!viewModel.fotoBase64.isNullOrEmpty()) {
+                            val bitmap = decodeBase64ToBitmap(viewModel.fotoBase64!!)
                             if (bitmap != null) Image(bitmap = bitmap.asImageBitmap(), null, Modifier.fillMaxSize(), contentScale = ContentScale.Crop)
                         } else { Text("Seleccionar foto", color = BlueAccent, fontWeight = FontWeight.SemiBold) }
                     }
                     Spacer(Modifier.height(12.dp))
-                    OutlinedTextField(value = nuevoTitulo, onValueChange = { nuevoTitulo = it }, label = { Text("Título de la Receta") }, modifier = Modifier.fillMaxWidth(), colors = dColors)
-                    OutlinedTextField(value = nuevoTiempo, onValueChange = { nuevoTiempo = it }, label = { Text("Tiempo (ej: 40 min)") }, modifier = Modifier.fillMaxWidth(), colors = dColors)
-                    OutlinedTextField(value = caloriasTexto, onValueChange = { caloriasTexto = it }, label = { Text("Calorías aproximadas") }, modifier = Modifier.fillMaxWidth(), colors = dColors)
-                    OutlinedTextField(value = nuevaReceta, onValueChange = { nuevaReceta = it }, label = { Text("Pasos de la receta") }, modifier = Modifier.fillMaxWidth(), minLines = 3, colors = dColors)
+                    OutlinedTextField(value = viewModel.nuevoTitulo, onValueChange = { viewModel.nuevoTitulo = it }, label = { Text("Título de la Receta") }, modifier = Modifier.fillMaxWidth(), colors = dColors)
+                    OutlinedTextField(value = viewModel.nuevoTiempo, onValueChange = { viewModel.nuevoTiempo = it }, label = { Text("Tiempo (ej: 40 min)") }, modifier = Modifier.fillMaxWidth(), colors = dColors)
+                    OutlinedTextField(value = viewModel.caloriasTexto, onValueChange = { viewModel.caloriasTexto = it }, label = { Text("Calorías aproximadas") }, modifier = Modifier.fillMaxWidth(), colors = dColors)
+                    OutlinedTextField(value = viewModel.nuevaReceta, onValueChange = { viewModel.nuevaReceta = it }, label = { Text("Pasos de la receta") }, modifier = Modifier.fillMaxWidth(), minLines = 3, colors = dColors)
                 }
             },
             confirmButton = {
@@ -392,7 +287,7 @@ fun PlatosScreen(isAdmin: Boolean, idUsuario: Int, isDarkTheme: Boolean, onToggl
                 }
             },
             dismissButton = {
-                TextButton(onClick = { mostrarDialogoSugerencia = false }) { Text("Cancelar", color = textColor.copy(0.6f)) }
+                TextButton(onClick = { viewModel.showingDialogoSugerencia = false }) { Text("Cancelar", color = textColor.copy(0.6f)) }
             }
         )
     }

@@ -1,12 +1,10 @@
 package com.example.trainium2
 
-import android.widget.Toast
 import androidx.compose.animation.core.*
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -30,79 +28,37 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.drawscope.Stroke
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.trainium2.models.PesoUsuario
 import com.example.trainium2.AppConfig
-import com.example.trainium2.DbColumns
-import com.example.trainium2.DbTables
 import com.example.trainium2.ui.theme.*
-import io.github.jan.supabase.postgrest.from
-import kotlinx.coroutines.Dispatchers
+import com.example.trainium2.ui.viewmodel.RegistroViewModel
 import kotlinx.coroutines.delay
-import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
-import java.text.SimpleDateFormat
 import java.util.*
 
 @Composable
-fun RegistroScreen(idUsuario: Int, isDarkTheme: Boolean, onToggleTheme: () -> Unit, onBack: () -> Unit) {
-    var registros by remember { mutableStateOf(listOf<PesoUsuario>()) }
-    var pesoCampo by remember { mutableStateOf("") }
-    var editandoId by remember { mutableStateOf<Int?>(null) }
-    var editandoPeso by remember { mutableStateOf("") }
-    var cargando by remember { mutableStateOf(true) }
-    val scope = rememberCoroutineScope()
-    val context = LocalContext.current
+fun RegistroScreen(userId: Int, darkTheme: Boolean, onToggleTheme: () -> Unit, onBack: () -> Unit) {
+    val viewModel = viewModel<RegistroViewModel>()
 
     val fechaHoy = AppConfig.FORMAT_ISO_DATE.format(Date())
-    val yaExisteHoy = registros.any { it.fecha == fechaHoy }
 
     var visible by remember { mutableStateOf(false) }
     val alphaAnim by animateFloatAsState(if (visible) 1f else 0f, tween(600), label = "alpha")
-    val textColor = if (isDarkTheme) Color.White else BlueDark
-    val subtitleColor = if (isDarkTheme) Color.White.copy(0.35f) else BlueDark.copy(0.4f)
-    val cardBg = if (isDarkTheme) Color(0xFF162347) else Color.White
+    val textColor = if (darkTheme) Color.White else BlueDark
+    val subtitleColor = if (darkTheme) Color.White.copy(0.35f) else BlueDark.copy(0.4f)
+    val cardBg = if (darkTheme) Color(0xFF162347) else Color.White
 
-    val bgBrush = if (isDarkTheme) {
+    val bgBrush = if (darkTheme) {
         Brush.verticalGradient(listOf(BlueDark, BlueMid, BlueDeep))
     } else {
         Brush.verticalGradient(listOf(Color(0xFFF0F4FF), Color(0xFFE3ECFF), Color(0xFFD6E4FF)))
     }
 
-    fun cargarDatos() {
-        cargando = true
-        visible = false
-        scope.launch {
-            try {
-                val data = withContext(Dispatchers.IO) {
-                    SupabaseClient.client.from("peso_usuario")
-                        .select {
-                            filter {
-                                eq(DbColumns.ID_USUARIO, idUsuario)
-                            }
-                        }
-                        .decodeList<PesoUsuario>()
-                        .sortedByDescending { it.fecha }
-                }
-                withContext(Dispatchers.Main) {
-                    registros = data
-                    cargando = false
-                    delay(100); visible = true
-                }
-            } catch (e: Exception) {
-                withContext(Dispatchers.Main) {
-                    Toast.makeText(context, "Error: ${e.message}", Toast.LENGTH_SHORT).show()
-                    cargando = false
-                }
-            }
-        }
-    }
-
-    LaunchedEffect(Unit) { cargarDatos() }
+    LaunchedEffect(Unit) { delay(100); visible = true; viewModel.loadRegistros(userId) }
 
     Box(Modifier.fillMaxSize().background(bgBrush)) {
         LazyColumn(
@@ -113,22 +69,22 @@ fun RegistroScreen(idUsuario: Int, isDarkTheme: Boolean, onToggleTheme: () -> Un
             item {
                 ScreenHeader(
                     title = "Progreso",
-                    subtitle = if (yaExisteHoy) "Registro de hoy completado" else "Añade tu peso de hoy",
+                    subtitle = if (viewModel.yaExisteHoy) "Registro de hoy completado" else "Añade tu peso de hoy",
                     onBack = onBack,
                     trailing = {
-                        IconButton(onClick = { cargarDatos() }) {
+                        IconButton(onClick = { viewModel.loadRegistros(userId) }) {
                             Icon(Icons.Default.Refresh, null, tint = BlueAccent)
                         }
                     },
                     textColor = textColor,
                     subtitleColor = subtitleColor,
                     onToggleTheme = onToggleTheme,
-                    darkTheme = isDarkTheme
+                    darkTheme = darkTheme
                 )
                 Spacer(Modifier.height(16.dp))
             }
 
-            if (!yaExisteHoy) {
+            if (!viewModel.yaExisteHoy) {
                 item {
                     Card(
                         modifier = Modifier.fillMaxWidth().alpha(alphaAnim).shadow(12.dp, RoundedCornerShape(20.dp)),
@@ -137,7 +93,7 @@ fun RegistroScreen(idUsuario: Int, isDarkTheme: Boolean, onToggleTheme: () -> Un
                     ) {
                         Row(Modifier.padding(16.dp), verticalAlignment = Alignment.CenterVertically) {
                             OutlinedTextField(
-                                value = pesoCampo, onValueChange = { pesoCampo = it },
+                                value = viewModel.pesoCampo, onValueChange = { viewModel.pesoCampo = it },
                                 modifier = Modifier.weight(1f), label = { Text("Peso actual (kg)") },
                                 shape = RoundedCornerShape(14.dp),
                                 colors = OutlinedTextFieldDefaults.colors(
@@ -149,20 +105,8 @@ fun RegistroScreen(idUsuario: Int, isDarkTheme: Boolean, onToggleTheme: () -> Un
                             Spacer(Modifier.width(12.dp))
                             FloatingActionButton(
                                 onClick = {
-                                    val p = pesoCampo.replace(",", ".").toDoubleOrNull() ?: return@FloatingActionButton
-                                    scope.launch {
-                                        try {
-                                            val nuevo = PesoUsuario(idUsuario = idUsuario, peso = p, fecha = fechaHoy)
-                                            withContext(Dispatchers.IO) {
-                                                SupabaseClient.client.from("peso_usuario").insert(nuevo)
-                                            }
-                                            withContext(Dispatchers.Main) { pesoCampo = ""; cargarDatos() }
-                                        } catch (e: Exception) {
-                                            withContext(Dispatchers.Main) {
-                                                Toast.makeText(context, "Error al añadir: ${e.message}", Toast.LENGTH_SHORT).show()
-                                            }
-                                        }
-                                    }
+                                    viewModel.pesoCampo = viewModel.pesoCampo.replace(",", ".")
+                                    viewModel.addRegistro(userId) { }
                                 },
                                 containerColor = BlueAccent, modifier = Modifier.size(50.dp)
                             ) { Icon(Icons.Default.Add, null, tint = Color.White) }
@@ -172,7 +116,7 @@ fun RegistroScreen(idUsuario: Int, isDarkTheme: Boolean, onToggleTheme: () -> Un
                 }
             }
 
-            if (cargando) {
+            if (viewModel.isLoading) {
                 item {
                     Column(Modifier.fillMaxWidth().padding(top = 20.dp)) {
                         SkeletonCard(modifier = Modifier.fillMaxWidth(), height = 60)
@@ -195,20 +139,20 @@ fun RegistroScreen(idUsuario: Int, isDarkTheme: Boolean, onToggleTheme: () -> Un
                             .verticalScroll(historyScrollState),
                         verticalArrangement = Arrangement.spacedBy(10.dp)
                     ) {
-                        registros.forEach { reg ->
+                        viewModel.registros.forEach { reg ->
                             val esHoy = reg.fecha == fechaHoy
                             Card(
                                 modifier = Modifier.fillMaxWidth().alpha(alphaAnim),
                                 shape = RoundedCornerShape(16.dp),
-                                colors = CardDefaults.cardColors(containerColor = if (esHoy) (if (isDarkTheme) Color(0xFF1E2D52) else Color(0xFFE8F0FF)) else cardBg)
+                                colors = CardDefaults.cardColors(containerColor = if (esHoy) (if (darkTheme) Color(0xFF1E2D52) else Color(0xFFE8F0FF)) else cardBg)
                             ) {
                                 Row(Modifier.padding(16.dp), verticalAlignment = Alignment.CenterVertically) {
                                     Box(Modifier.size(8.dp).background(if (esHoy) BlueAccent else textColor.copy(0.2f), CircleShape))
                                     Spacer(Modifier.width(16.dp))
 
                                     Column(Modifier.weight(1f)) {
-                                        if (editandoId == reg.id) {
-                                            OutlinedTextField(value = editandoPeso, onValueChange = { editandoPeso = it }, modifier = Modifier.width(90.dp), singleLine = true, colors = OutlinedTextFieldDefaults.colors(focusedTextColor = textColor))
+                                        if (viewModel.editandoId == reg.id) {
+                                            OutlinedTextField(value = viewModel.editandoPeso, onValueChange = { viewModel.editandoPeso = it }, modifier = Modifier.width(90.dp), singleLine = true, colors = OutlinedTextFieldDefaults.colors(focusedTextColor = textColor))
                                         } else {
                                             Text("${reg.peso} kg", fontWeight = FontWeight.Bold, color = textColor, fontSize = 18.sp)
                                             Text(if (esHoy) "Hoy" else reg.fecha, fontSize = 12.sp, color = textColor.copy(0.4f))
@@ -216,47 +160,15 @@ fun RegistroScreen(idUsuario: Int, isDarkTheme: Boolean, onToggleTheme: () -> Un
                                     }
 
                                     if (esHoy) {
-                                        if (editandoId == reg.id) {
+                                        if (viewModel.editandoId == reg.id) {
                                             IconButton(onClick = {
-                                                val np = editandoPeso.replace(",", ".").toDoubleOrNull() ?: return@IconButton
-                                                scope.launch {
-                                                    try {
-                                                        val rId = reg.id ?: return@launch
-                                                        withContext(Dispatchers.IO) {
-                                                            SupabaseClient.client.from("peso_usuario").update({
-                                                                set(DbColumns.PESO, np)
-                                                            }) {
-                                                                filter { eq(DbColumns.ID, rId) }
-                                                            }
-                                                        }
-                                                        withContext(Dispatchers.Main) { editandoId = null; cargarDatos() }
-                                                    } catch (e: Exception) {
-                                                        withContext(Dispatchers.Main) {
-                                                            Toast.makeText(context, "Error al actualizar: ${e.message}", Toast.LENGTH_SHORT).show()
-                                                        }
-                                                    }
-                                                }
+                                                viewModel.editandoPeso = viewModel.editandoPeso.replace(",", ".")
+                                                viewModel.saveEdit()
                                             }) { Icon(Icons.Default.Check, null, tint = BlueAccent) }
                                         } else {
-                                            IconButton(onClick = { editandoId = reg.id; editandoPeso = reg.peso.toString() }) { Icon(Icons.Default.Edit, null, tint = textColor.copy(0.5f), modifier = Modifier.size(18.dp)) }
+                                            IconButton(onClick = { reg.id?.let { viewModel.startEdit(it, reg.peso) } }) { Icon(Icons.Default.Edit, null, tint = textColor.copy(0.5f), modifier = Modifier.size(18.dp)) }
                                         }
-                                        IconButton(onClick = {
-                                            scope.launch {
-                                                try {
-                                                    val rId = reg.id ?: return@launch
-                                                    withContext(Dispatchers.IO) {
-                                                        SupabaseClient.client.from("peso_usuario").delete {
-                                                            filter { eq(DbColumns.ID, rId) }
-                                                        }
-                                                    }
-                                                    withContext(Dispatchers.Main) { cargarDatos() }
-                                                } catch (e: Exception) {
-                                                    withContext(Dispatchers.Main) {
-                                                        Toast.makeText(context, "Error al borrar: ${e.message}", Toast.LENGTH_SHORT).show()
-                                                    }
-                                                }
-                                            }
-                                        }) { Icon(Icons.Default.Delete, null, tint = Color(0xFFFF6B6B).copy(0.7f), modifier = Modifier.size(18.dp)) }
+                                        IconButton(onClick = { reg.id?.let { viewModel.deleteRegistro(it) } }) { Icon(Icons.Default.Delete, null, tint = Color(0xFFFF6B6B).copy(0.7f), modifier = Modifier.size(18.dp)) }
                                     }
                                 }
                             }
@@ -264,12 +176,12 @@ fun RegistroScreen(idUsuario: Int, isDarkTheme: Boolean, onToggleTheme: () -> Un
                     }
                 }
 
-                if (registros.isNotEmpty()) {
+                if (viewModel.registros.isNotEmpty()) {
                     item {
                         Spacer(Modifier.height(30.dp))
                         Text("GRÁFICA DE EVOLUCIÓN", fontSize = 11.sp, fontWeight = FontWeight.Bold, color = textColor.copy(0.3f), letterSpacing = 3.sp)
                         Spacer(Modifier.height(16.dp))
-                        GraficaPeso(registros, isDarkTheme)
+                        GraficaPeso(viewModel.registros, darkTheme)
                         Spacer(Modifier.height(20.dp))
                     }
                 }

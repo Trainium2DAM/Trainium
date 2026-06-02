@@ -102,7 +102,7 @@ class MainActivity : ComponentActivity() {
                             LaunchedEffect(Unit) {
                                 if (sesion != null) {
                                     navController.navigate(
-                                        "profile/${sesion.userName}/${if (sesion.isAdmin) 1 else 0}/${sesion.userId}/${if (sesion.isPremium) 1 else 0}"
+                                        "profile/${sesion.userId}"
                                     ) { popUpTo("loading") { inclusive = true } }
                                 } else {
                                     navController.navigate("main") {
@@ -127,45 +127,33 @@ class MainActivity : ComponentActivity() {
                                 onBack = { navController.popBackStack() },
                                 onNavigateToRegister = { navController.navigate("register") },
                                 onNavigateToForgot = { navController.navigate("forgot") },
-                                onLoginSuccess = { nombre, isAdmin, idUsuario, isPremium ->
-                                    navController.navigate("profile/$nombre/$isAdmin/$idUsuario/$isPremium")
+                                onLoginSuccess = { _, isAdmin, idUsuario, isPremium ->
+                                    navController.navigate("profile/$idUsuario")
                                 }
                             )
                         }
 
                         composable(
-                            "profile/{nombre}/{isAdmin}/{idUsuario}/{isPremium}",
+                            "profile/{idUsuario}",
                             arguments = listOf(
-                                navArgument("nombre") { type = NavType.StringType },
-                                navArgument("isAdmin") { type = NavType.IntType },
-                                navArgument("idUsuario") { type = NavType.IntType },
-                                navArgument("isPremium") { type = NavType.IntType }
+                                navArgument("idUsuario") { type = NavType.IntType }
                             )
                         ) { backStackEntry ->
-                            val nombre = backStackEntry.arguments?.getString("nombre") ?: ""
-                            val isAdmin = backStackEntry.arguments?.getInt("isAdmin") == 1
                             val idUsuario = backStackEntry.arguments?.getInt("idUsuario") ?: 0
-                            val isPremium = backStackEntry.arguments?.getInt("isPremium") == 1
 
                             ProfileScreen(
-                                nombre = nombre,
-                                isAdmin = isAdmin,
-                                idUsuario = idUsuario,
-                                isPremium = isPremium,
-                                isDarkTheme = isDarkTheme,
+                                userId = idUsuario,
+                                isPremium = false,
+                                darkTheme = isDarkTheme,
                                 onToggleTheme = toggleTheme,
                                 onLogout = { navController.navigate("main") { popUpTo(0) } },
-                                onNavigateToMaquinas = { admin, id ->
-                                    navController.navigate("maquinas/${if(admin) 1 else 0}/$id")
-                                },
-                                onNavigateToPlatos = { admin, id -> 
-                                    navController.navigate("platos/${if(admin) 1 else 0}/$id") 
-                                },
-                                onNavigateToRegistro = { id -> navController.navigate("registro/$id") },
-                                onNavigateToReservas = { admin, id ->
-                                    navController.navigate("reservas/${if(admin) 1 else 0}/$id")
-                                },
-                                onNavigateToEditProfile = { id -> navController.navigate("edit_profile/$id") }
+                                onNavigateToMaquinas = { navController.navigate("maquinas/0/$idUsuario") },
+                                onNavigateToEditProfile = { navController.navigate("edit_profile/$idUsuario") },
+                                onNavigateToReservas = { navController.navigate("reservas/0/$idUsuario") },
+                                onNavigateToPlatos = { navController.navigate("platos/0/$idUsuario") },
+                                onNavigateToRegistroPeso = { navController.navigate("registro/$idUsuario") },
+                                onNavigateToHistorial = { navController.navigate("historial/$idUsuario") },
+                                onNavigateToPremium = { navController.navigate("premium_selection/$idUsuario") }
                             )
                         }
 
@@ -175,11 +163,12 @@ class MainActivity : ComponentActivity() {
                         ) { bse ->
                             val id = bse.arguments?.getInt("idUsuario") ?: 0
                             EditProfileScreen(
-                                idUsuario = id,
-                                isDarkTheme = isDarkTheme,
+                                userId = id,
+                                isPremium = false,
+                                darkTheme = isDarkTheme,
                                 onToggleTheme = toggleTheme,
-                                onBack = { navController.popBackStack() },
-                                onNavigateToHistorial = { i -> navController.navigate("historial/$i") },
+                                onNavigateToProfile = { navController.popBackStack() },
+                                onNavigateToHistorial = { navController.navigate("historial/$id") },
                                 onNavigateToPremium = { navController.navigate("premium_selection/$id") }
                             )
                         }
@@ -189,7 +178,7 @@ class MainActivity : ComponentActivity() {
                             arguments = listOf(navArgument("idUsuario") { type = NavType.IntType })
                         ) { bse ->
                             val id = bse.arguments?.getInt("idUsuario") ?: 0
-                            HistorialScreen(idUsuario = id, isDarkTheme = isDarkTheme, onToggleTheme = toggleTheme, onBack = { navController.popBackStack() })
+                            HistorialScreen(userId = id, darkTheme = isDarkTheme, onToggleTheme = toggleTheme, onBack = { navController.popBackStack() })
                         }
 
                         composable(
@@ -197,7 +186,7 @@ class MainActivity : ComponentActivity() {
                             arguments = listOf(navArgument("idUsuario") { type = NavType.IntType })
                         ) { bse ->
                             val id = bse.arguments?.getInt("idUsuario") ?: 0
-                            PremiumSelectionScreen(idUsuario = id, isDarkTheme = isDarkTheme, onToggleTheme = toggleTheme, onBack = { navController.popBackStack() }, onSuccess = { navController.popBackStack() })
+                            PremiumSelectionScreen(userId = id, darkTheme = isDarkTheme, onToggleTheme = toggleTheme, onBack = { navController.popBackStack() }, onSuccess = { navController.popBackStack() })
                         }
 
                         composable(
@@ -209,7 +198,7 @@ class MainActivity : ComponentActivity() {
                         ) { bse ->
                             val admin = bse.arguments?.getInt("isAdmin") == 1
                             val id = bse.arguments?.getInt("idUsuario") ?: 0
-                            MaquinasScreen(isAdmin = admin, idUsuario = id, isDarkTheme = isDarkTheme, onToggleTheme = toggleTheme, onBack = { navController.popBackStack() })
+                            MaquinasScreen(userId = id, isAdmin = admin, darkTheme = isDarkTheme, onToggleTheme = toggleTheme, onBack = { navController.popBackStack() })
                         }
 
                         composable(
@@ -217,7 +206,7 @@ class MainActivity : ComponentActivity() {
                             arguments = listOf(navArgument("idUsuario") { type = NavType.IntType })
                         ) { bse ->
                             val id = bse.arguments?.getInt("idUsuario") ?: 0
-                            RegistroScreen(idUsuario = id, isDarkTheme = isDarkTheme, onToggleTheme = toggleTheme, onBack = { navController.popBackStack() })
+                            RegistroScreen(userId = id, darkTheme = isDarkTheme, onToggleTheme = toggleTheme, onBack = { navController.popBackStack() })
                         }
 
                         composable(
@@ -229,7 +218,7 @@ class MainActivity : ComponentActivity() {
                         ) { bse ->
                             val admin = bse.arguments?.getInt("isAdmin") == 1
                             val id = bse.arguments?.getInt("idUsuario") ?: 0
-                            ReservasScreen(isAdmin = admin, idUsuario = id, isDarkTheme = isDarkTheme, onToggleTheme = toggleTheme, onBack = { navController.popBackStack() })
+                            ReservasScreen(userId = id, isAdmin = admin, darkTheme = isDarkTheme, onToggleTheme = toggleTheme, onBack = { navController.popBackStack() })
                         }
 
                         composable(
@@ -241,11 +230,11 @@ class MainActivity : ComponentActivity() {
                         ) { bse ->
                             val admin = bse.arguments?.getInt("isAdmin") == 1
                             val id = bse.arguments?.getInt("idUsuario") ?: 0
-                            PlatosScreen(isAdmin = admin, idUsuario = id, isDarkTheme = isDarkTheme, onToggleTheme = toggleTheme) { navController.popBackStack() }
+                            PlatosScreen(userId = id, isAdmin = admin, darkTheme = isDarkTheme, onToggleTheme = toggleTheme, onBack = { navController.popBackStack() })
                         }
                         
-                        composable("register") { RegisterScreen(isDarkTheme = isDarkTheme, onToggleTheme = toggleTheme) { navController.popBackStack() } }
-                        composable("forgot") { ForgotPasswordScreen(isDarkTheme = isDarkTheme, onToggleTheme = toggleTheme) { navController.popBackStack() } }
+                        composable("register") { RegisterScreen(isDarkTheme = isDarkTheme, onToggleTheme = toggleTheme, onBack = { navController.popBackStack() }) }
+                        composable("forgot") { ForgotPasswordScreen(isDarkTheme = isDarkTheme, onToggleTheme = toggleTheme, onBack = { navController.popBackStack() }) }
                     }
                 }
             }

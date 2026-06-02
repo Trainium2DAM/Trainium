@@ -1,7 +1,6 @@
 package com.example.trainium2
 
 import android.app.DatePickerDialog
-import android.widget.Toast
 import androidx.compose.animation.*
 import androidx.compose.animation.core.*
 import androidx.compose.foundation.Image
@@ -32,86 +31,38 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.trainium2.models.ReservaConDetalles
 import com.example.trainium2.AppConfig
-import com.example.trainium2.DbColumns
-import com.example.trainium2.DbTables
 import com.example.trainium2.ui.theme.*
-import io.github.jan.supabase.postgrest.from
-import io.github.jan.supabase.postgrest.query.Columns
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
-import java.text.SimpleDateFormat
+import com.example.trainium2.ui.viewmodel.ReservasViewModel
+import androidx.lifecycle.viewmodel.compose.viewModel
 import java.util.*
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun ReservasScreen(isAdmin: Boolean, idUsuario: Int, isDarkTheme: Boolean, onToggleTheme: () -> Unit, onBack: () -> Unit) {
-    var todasLasReservas by remember { mutableStateOf(listOf<ReservaConDetalles>()) }
-    var cargando by remember { mutableStateOf(true) }
-    var errorConexion by remember { mutableStateOf(false) }
-
-    // Estados del filtro: "Próximas", "Hoy", "Todas", "Fecha"
-    var filtroSeleccionado by remember { mutableStateOf("Próximas") }
-    var fechaFiltroManual by remember { mutableStateOf("") }
+fun ReservasScreen(
+    userId: Int,
+    isAdmin: Boolean,
+    darkTheme: Boolean,
+    onToggleTheme: () -> Unit,
+    onBack: () -> Unit
+) {
+    val viewModel = viewModel<ReservasViewModel>()
 
     val hoyStr = AppConfig.FORMAT_ISO_DATE.format(Date())
-    val calendar = Calendar.getInstance()
 
-    val scope = rememberCoroutineScope()
     val context = LocalContext.current
 
-    var headerVisible by remember { mutableStateOf(false) }
+    val textColor = if (darkTheme) Color.White else BlueDark
+    val subtitleColor = if (darkTheme) Color.White.copy(0.35f) else BlueDark.copy(0.4f)
+    val cardBg = if (darkTheme) Color(0xFF162347) else Color.White
 
-    val textColor = if (isDarkTheme) Color.White else BlueDark
-    val subtitleColor = if (isDarkTheme) Color.White.copy(0.35f) else BlueDark.copy(0.4f)
-    val cardBg = if (isDarkTheme) Color(0xFF162347) else Color.White
-
-    val bgBrush = if (isDarkTheme) Brush.verticalGradient(listOf(BlueDark, BlueMid, BlueDeep))
+    val bgBrush = if (darkTheme) Brush.verticalGradient(listOf(BlueDark, BlueMid, BlueDeep))
     else Brush.verticalGradient(listOf(Color(0xFFF0F4FF), Color(0xFFE3ECFF), Color(0xFFD6E4FF)))
 
-    fun cargarDatos() {
-        cargando = true; errorConexion = false; headerVisible = false
-        scope.launch {
-            try {
-                val data = withContext(Dispatchers.IO) {
-                    val columns = Columns.raw("*, usuarios(*), maquinas(*)")
-                    SupabaseClient.client.from(DbTables.RESERVAS).select(columns) {
-                        if (!isAdmin) {
-                            filter {
-                                eq(DbColumns.ID_USUARIO, idUsuario)
-                            }
-                        }
-                    }.decodeList<ReservaConDetalles>()
-                }
-                withContext(Dispatchers.Main) {
-                    // Ordenamos por fecha y luego por hora
-                    todasLasReservas = data.sortedWith(compareBy({ it.fecha }, { it.horaInicio }))
-                    cargando = false; headerVisible = true
-                }
-            } catch (e: Exception) {
-                withContext(Dispatchers.Main) { errorConexion = true; cargando = false; headerVisible = true }
-            }
-        }
-    }
+    LaunchedEffect(Unit) { viewModel.loadReservations(isAdmin, userId) }
 
-    LaunchedEffect(Unit) { cargarDatos() }
+    var mostrarDatePickerReserva by remember { mutableStateOf(false) }
 
-    // Selector de Fecha
-    val datePickerDialog = DatePickerDialog(context, { _, y, m, d ->
-        val fechaSel = String.format("%d-%02d-%02d", y, m + 1, d)
-        fechaFiltroManual = fechaSel
-        filtroSeleccionado = "Fecha"
-    }, calendar.get(Calendar.YEAR), calendar.get(Calendar.MONTH), calendar.get(Calendar.DAY_OF_MONTH))
-
-    // Lógica de filtrado en memoria
-    val reservasFiltradas = remember(todasLasReservas, filtroSeleccionado, fechaFiltroManual) {
-        when (filtroSeleccionado) {
-            "Hoy" -> todasLasReservas.filter { it.fecha == hoyStr }
-            "Próximas" -> todasLasReservas.filter { it.fecha >= hoyStr }
-            "Fecha" -> todasLasReservas.filter { it.fecha == fechaFiltroManual }
-            else -> todasLasReservas // "Todas"
-        }
-    }
+    val reservasFiltradas = viewModel.getFilteredReservations()
 
     Box(Modifier.fillMaxSize().background(bgBrush)) {
         Column(Modifier.fillMaxSize().padding(20.dp)) {
@@ -121,14 +72,14 @@ fun ReservasScreen(isAdmin: Boolean, idUsuario: Int, isDarkTheme: Boolean, onTog
                 subtitle = if (isAdmin) "Administración global" else "Tus entrenamientos",
                 onBack = onBack,
                 trailing = {
-                    IconButton(onClick = { cargarDatos() }) {
+                    IconButton(onClick = { viewModel.loadReservations(isAdmin, userId) }) {
                         Icon(Icons.Default.Refresh, null, tint = BlueAccent)
                     }
                 },
                 textColor = textColor,
                 subtitleColor = subtitleColor,
                 onToggleTheme = onToggleTheme,
-                darkTheme = isDarkTheme
+                darkTheme = darkTheme
             )
 
             Spacer(Modifier.height(16.dp))
@@ -136,10 +87,10 @@ fun ReservasScreen(isAdmin: Boolean, idUsuario: Int, isDarkTheme: Boolean, onTog
             // --- FILTROS (Chips + Calendario) ---
             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
                 listOf("Próximas", "Hoy", "Todas").forEach { texto ->
-                    val sel = filtroSeleccionado == texto
+                    val sel = viewModel.filtroSeleccionado == texto
                     FilterChip(
                         selected = sel,
-                        onClick = { filtroSeleccionado = texto },
+                        onClick = { viewModel.setFilter(texto) },
                         label = { Text(texto) },
                         colors = FilterChipDefaults.filterChipColors(
                             selectedContainerColor = BlueAccent,
@@ -152,21 +103,21 @@ fun ReservasScreen(isAdmin: Boolean, idUsuario: Int, isDarkTheme: Boolean, onTog
                 }
 
                 IconButton(
-                    onClick = { datePickerDialog.show() },
-                    modifier = Modifier.size(32.dp).background(if(filtroSeleccionado == "Fecha") BlueAccent else Color.Transparent, CircleShape)
+                    onClick = { mostrarDatePickerReserva = true },
+                    modifier = Modifier.size(32.dp).background(if(viewModel.filtroSeleccionado == "Fecha") BlueAccent else Color.Transparent, CircleShape)
                 ) {
-                    Icon(Icons.Default.CalendarToday, null, tint = if(filtroSeleccionado == "Fecha") Color.White else BlueAccent, modifier = Modifier.size(18.dp))
+                    Icon(Icons.Default.CalendarToday, null, tint = if(viewModel.filtroSeleccionado == "Fecha") Color.White else BlueAccent, modifier = Modifier.size(18.dp))
                 }
             }
 
-            if (filtroSeleccionado == "Fecha") {
-                Text("Filtrando día: $fechaFiltroManual", fontSize = 12.sp, color = BlueAccent, fontWeight = FontWeight.Bold, modifier = Modifier.padding(top = 8.dp))
+            if (viewModel.filtroSeleccionado == "Fecha") {
+                Text("Filtrando día: ${viewModel.fechaFiltroManual}", fontSize = 12.sp, color = BlueAccent, fontWeight = FontWeight.Bold, modifier = Modifier.padding(top = 8.dp))
             }
 
             Spacer(Modifier.height(12.dp))
 
             // --- LISTA DE RESERVAS ---
-            if (cargando) {
+            if (viewModel.isLoading) {
                 Column(Modifier.fillMaxWidth().weight(1f).padding(top = 12.dp)) {
                     SkeletonCard(modifier = Modifier.fillMaxWidth(), height = 80)
                     Spacer(Modifier.height(10.dp))
@@ -174,7 +125,7 @@ fun ReservasScreen(isAdmin: Boolean, idUsuario: Int, isDarkTheme: Boolean, onTog
                     Spacer(Modifier.height(10.dp))
                     SkeletonCard(modifier = Modifier.fillMaxWidth(), height = 80)
                 }
-            } else if (errorConexion) {
+            } else if (viewModel.error != null) {
                 Box(Modifier.fillMaxWidth().weight(1f), contentAlignment = Alignment.Center) {
                     Text("Error de conexión", color = textColor)
                 }
@@ -190,7 +141,7 @@ fun ReservasScreen(isAdmin: Boolean, idUsuario: Int, isDarkTheme: Boolean, onTog
                             modifier = Modifier.fillMaxWidth().shadow(if (esHoy) 6.dp else 1.dp, RoundedCornerShape(16.dp)),
                             shape = RoundedCornerShape(16.dp),
                             colors = CardDefaults.cardColors(
-                                containerColor = if (esHoy) (if (isDarkTheme) Color(0xFF1E2D52) else Color(0xFFE8F0FF)) else cardBg
+                                containerColor = if (esHoy) (if (darkTheme) Color(0xFF1E2D52) else Color(0xFFE8F0FF)) else cardBg
                             )
                         ) {
                             Row(Modifier.padding(16.dp), verticalAlignment = Alignment.CenterVertically) {
@@ -216,14 +167,8 @@ fun ReservasScreen(isAdmin: Boolean, idUsuario: Int, isDarkTheme: Boolean, onTog
                                     if (isAdmin) Text("${r.usuario?.nombre ?: "Usuario"}", fontSize = 11.sp, color = textColor.copy(0.5f))
                                 }
                                 IconButton(onClick = {
-                                    scope.launch {
-                                        try {
-                                            withContext(Dispatchers.IO) {
-                                                SupabaseClient.client.from(DbTables.RESERVAS).delete { filter { eq(DbColumns.ID, r.id) } }
-                                            }
-                                            cargarDatos()
-                                            Toast.makeText(context, "Reserva cancelada", Toast.LENGTH_SHORT).show()
-                                        } catch (e: Exception) { e.printStackTrace() }
+                                    viewModel.deleteReservation(r.id) {
+                                        viewModel.loadReservations(isAdmin, userId)
                                     }
                                 }) { Icon(Icons.Default.Delete, null, tint = Color(0xFFFF6B6B).copy(0.7f), modifier = Modifier.size(20.dp)) }
                             }
@@ -232,5 +177,36 @@ fun ReservasScreen(isAdmin: Boolean, idUsuario: Int, isDarkTheme: Boolean, onTog
                 }
             }
         }
+    }
+
+    if (mostrarDatePickerReserva) {
+        val calendar = Calendar.getInstance()
+        val datePickerState = rememberDatePickerState(
+            initialSelectedDateMillis = System.currentTimeMillis(),
+            selectableDates = object : SelectableDates {
+                override fun isSelectableDate(utcTimeMillis: Long): Boolean = utcTimeMillis >= System.currentTimeMillis() - 86400000L
+            }
+        )
+        DatePickerDialog(
+            onDismissRequest = { mostrarDatePickerReserva = false },
+            confirmButton = {
+                TextButton(onClick = {
+                    val mReserva = datePickerState.selectedDateMillis
+                    if (mReserva != null) {
+                        val cal = Calendar.getInstance().apply { timeInMillis = mReserva }
+                        val fechaSel = String.format("%d-%02d-%02d", cal.get(Calendar.YEAR), cal.get(Calendar.MONTH) + 1, cal.get(Calendar.DAY_OF_MONTH))
+                        viewModel.setDateFilter(fechaSel)
+                        viewModel.setFilter("Fecha")
+                        mostrarDatePickerReserva = false
+                    } else { mostrarDatePickerReserva = false }
+                }) { Text("OK", color = MaterialTheme.colorScheme.primary, fontWeight = FontWeight.Bold) }
+            },
+            dismissButton = { TextButton(onClick = { mostrarDatePickerReserva = false }) { Text("Cancelar", color = textColor.copy(0.5f)) } },
+            colors = DatePickerDefaults.colors(
+                selectedDayContentColor = Color.White, selectedDayContainerColor = BlueAccent,
+                todayContentColor = BlueAccent, todayDateBorderColor = BlueAccent,
+                dayContentColor = textColor, titleContentColor = Color.White, headlineContentColor = Color.White
+            )
+        ) { DatePicker(state = datePickerState) }
     }
 }
