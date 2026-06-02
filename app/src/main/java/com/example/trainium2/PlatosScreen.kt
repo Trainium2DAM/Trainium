@@ -16,6 +16,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
+import androidx.compose.material.icons.automirrored.filled.ArrowForward
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -23,6 +24,9 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.scale
+import androidx.compose.ui.semantics.LiveRegionMode
+import androidx.compose.ui.semantics.liveRegion
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
@@ -114,14 +118,15 @@ fun PlatosScreen(
                 onBack = onBack,
                 trailing = {
                     IconButton(onClick = { visible = false; viewModel.loadPlatos(isAdmin) }) {
-                        Icon(Icons.Default.Refresh, null, tint = BlueAccent)
+                        Icon(Icons.Default.Refresh, contentDescription = strings.contentDescRefresh, tint = BlueAccent)
                     }
                 },
                 textColor = textColor,
                 subtitleColor = subtitleColor,
                 onToggleTheme = onToggleTheme,
                 darkTheme = darkTheme,
-                onToggleLanguage = onToggleLanguage
+                onToggleLanguage = onToggleLanguage,
+                strings = strings
             )
 
             Spacer(Modifier.height(10.dp))
@@ -131,7 +136,7 @@ fun PlatosScreen(
                 shape = RoundedCornerShape(14.dp),
                 colors = ButtonDefaults.buttonColors(containerColor = BlueAccent)
             ) {
-                Icon(Icons.Default.Add, null, tint = Color.White)
+                Icon(Icons.Default.Add, contentDescription = strings.suggestRecipe, tint = Color.White)
                 Spacer(Modifier.width(8.dp))
                 Text(strings.suggestRecipe, color = Color.White, fontWeight = FontWeight.Bold)
             }
@@ -145,7 +150,7 @@ fun PlatosScreen(
                 }
             } else if (viewModel.error != null) {
                 Column(Modifier.fillMaxWidth(), horizontalAlignment = Alignment.CenterHorizontally) {
-                    Text("${viewModel.error}", color = textColor)
+                    Text("${viewModel.error}", color = textColor, modifier = Modifier.semantics { liveRegion = LiveRegionMode.Polite })
                     Button(onClick = { viewModel.loadPlatos(isAdmin) }, Modifier.padding(top = 16.dp)) { Text(strings.retry) }
                 }
             } else {
@@ -182,8 +187,8 @@ fun PlatosScreen(
                                             modifier = Modifier.fillMaxSize(),
                                             contentScale = ContentScale.Crop
                                         )
-                                    } else { Icon(Icons.Default.Restaurant, null, tint = BlueAccent.copy(0.4f), modifier = Modifier.size(60.dp)) }
-                                } else { Icon(Icons.Default.Restaurant, null, tint = BlueAccent.copy(0.4f), modifier = Modifier.size(60.dp)) }
+                                    } else { Icon(Icons.Default.Restaurant, contentDescription = strings.dishes, tint = BlueAccent.copy(0.4f), modifier = Modifier.size(60.dp)) }
+                                } else { Icon(Icons.Default.Restaurant, contentDescription = strings.dishes, tint = BlueAccent.copy(0.4f), modifier = Modifier.size(60.dp)) }
                             }
 
                             Spacer(Modifier.height(24.dp))
@@ -198,13 +203,13 @@ fun PlatosScreen(
 
                                     Row(Modifier.padding(vertical = 12.dp), horizontalArrangement = Arrangement.spacedBy(16.dp), verticalAlignment = Alignment.CenterVertically) {
                                         Row(verticalAlignment = Alignment.CenterVertically) {
-                                            Icon(Icons.Default.LocalFireDepartment, null, tint = Color(0xFFFF6B35), modifier = Modifier.size(16.dp))
+                                            Icon(Icons.Default.LocalFireDepartment, contentDescription = strings.approximateCalories, tint = Color(0xFFFF6B35), modifier = Modifier.size(16.dp))
                                             Text("${plato.calorias ?: 0.0} kcal", color = BlueAccent, fontWeight = FontWeight.Bold, modifier = Modifier.padding(start = 4.dp))
                                         }
                                         if (!plato.tiempo.isNullOrEmpty()) {
                                             VerticalDivider(modifier = Modifier.height(14.dp), color = textColor.copy(0.1f))
                                             Row(verticalAlignment = Alignment.CenterVertically) {
-                                                Icon(Icons.Default.Timer, null, tint = BlueAccent, modifier = Modifier.size(16.dp))
+                                                Icon(Icons.Default.Timer, contentDescription = strings.cookingTime, tint = BlueAccent, modifier = Modifier.size(16.dp))
                                                 Text(plato.tiempo!!, color = textColor.copy(0.6f), fontWeight = FontWeight.Medium, modifier = Modifier.padding(start = 4.dp))
                                             }
                                         }
@@ -227,7 +232,7 @@ fun PlatosScreen(
                         shape = RoundedCornerShape(16.dp),
                         colors = ButtonDefaults.buttonColors(containerColor = BlueAccent.copy(0.12f), contentColor = BlueAccent)
                     ) {
-                        Icon(Icons.Default.ArrowForward, null)
+                        Icon(Icons.AutoMirrored.Filled.ArrowForward, contentDescription = strings.contentDescNext)
                         Spacer(Modifier.width(10.dp))
                         Text(strings.nextRecommended, fontWeight = FontWeight.ExtraBold, fontSize = 15.sp)
                     }
@@ -252,8 +257,8 @@ fun PlatosScreen(
                                     Text("${strings.timeLabel} ${sug.tiempo ?: strings.notAvailable}", fontSize = 12.sp, color = subtitleColor)
                                 }
                                 Row {
-                                    IconButton(onClick = { viewModel.aprobarSugerencia(sug.id ?: return@IconButton); viewModel.loadPlatos(isAdmin) }) { Icon(Icons.Default.Check, null, tint = Color(0xFF00E676)) }
-                                    IconButton(onClick = { viewModel.rechazarSugerencia(sug.id ?: return@IconButton); viewModel.loadPlatos(isAdmin) }) { Icon(Icons.Default.Close, null, tint = Color(0xFFFF6B6B)) }
+                                    IconButton(onClick = { viewModel.aprobarSugerencia(sug.id ?: return@IconButton); viewModel.loadPlatos(isAdmin) }) { Icon(Icons.Default.Check, contentDescription = strings.contentDescApprove, tint = Color(0xFF00E676)) }
+                                    IconButton(onClick = { viewModel.rechazarSugerencia(sug.id ?: return@IconButton); viewModel.loadPlatos(isAdmin) }) { Icon(Icons.Default.Close, contentDescription = strings.contentDescReject, tint = Color(0xFFFF6B6B)) }
                                 }
                             }
                         }

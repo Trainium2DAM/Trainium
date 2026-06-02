@@ -135,8 +135,29 @@ val StringsAr = AppStrings(
     machineOccupiedSchedule = "الآلة مشغولة بالفعل في ذلك الوقت",
     userReservationConflict = "لديك بالفعل حجز في ذلك الوقت",
 
+    contentDescRefresh = "تحديث",
+    contentDescDelete = "حذف",
+    contentDescAdd = "إضافة",
+    contentDescBack = "رجوع",
+    contentDescNext = "التالي",
+    contentDescSettings = "الإعدادات",
+    contentDescApprove = "موافقة",
+    contentDescReject = "رفض",
     theme = "المظهر",
     language = "اللغة",
     selectLanguage = "اختر اللغة",
-    close = "إغلاق"
+    close = "إغلاق",
+
+    expiresToday = "ينتهي اليوم!",
+    daysLeft = "أيام متبقية",
+    dateFromTo = "من %s إلى %s",
+
+    filterPast = "الماضية",
+    addToCalendar = "ضيف للتقويم",
+    addToCalendarMessage = "تبغي تزيد هاد الحجز للتقويم ديالك؟",
+    reservationBooked = "تّم الحجز!",
+    notificationsTitle = "الإشعارات",
+    notifyBeforeLabel = "عيط لي قبل:",
+    reminderTitle = "تذكير بالحجز",
+    reminderBody = "%1\$s: %2\$s - %3\$s"
 )

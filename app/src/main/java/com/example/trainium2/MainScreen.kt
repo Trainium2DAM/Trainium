@@ -6,7 +6,7 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ArrowForward
+import androidx.compose.material.icons.automirrored.filled.ArrowForward
 import androidx.compose.material.icons.filled.DarkMode
 import androidx.compose.material.icons.filled.Language
 import androidx.compose.material.icons.filled.LightMode
@@ -59,65 +59,66 @@ fun MainScreen(
         Brush.verticalGradient(listOf(Color(0xFFF0F4FF), Color(0xFFE3ECFF), Color(0xFFD6E4FF)))
 
     Box(modifier = Modifier.fillMaxSize().background(bg)) {
+        Column(Modifier.fillMaxSize()) {
+            Spacer(Modifier.windowInsetsTopHeight(WindowInsets.statusBars))
 
-        Row(
-            modifier = Modifier
-                .align(Alignment.TopEnd)
-                .statusBarsPadding()
-                .padding(end = 8.dp, top = 4.dp),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            IconButton(onClick = onToggleLanguage) {
-                Icon(
-                    Icons.Default.Language,
-                    contentDescription = strings.language,
-                    tint = if (isDarkTheme) BlueSoft else BlueAccent,
-                    modifier = Modifier.size(24.dp)
-                )
-            }
-            IconButton(onClick = onToggleTheme) {
-                Icon(
-                    if (isDarkTheme) Icons.Default.LightMode else Icons.Default.DarkMode,
-                    contentDescription = strings.theme,
-                    tint = if (isDarkTheme) BlueSoft else BlueAccent,
-                    modifier = Modifier.size(26.dp)
-                )
-            }
-        }
-
-        Column(
-            modifier = Modifier.fillMaxSize().padding(32.dp),
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.Center
-        ) {
-            Box(contentAlignment = Alignment.Center, modifier = Modifier.scale(logoScale).alpha(logoAlpha)) {
-                Image(
-                    painter = painterResource(if (isDarkTheme) R.drawable.blanco else R.drawable.negro),
-                    contentDescription = "Logo Trainium",
-                    modifier = Modifier.fillMaxWidth().height(280.dp).padding(horizontal = 20.dp)
-                )
-            }
-
-            Spacer(Modifier.height(16.dp))
-
-            Text("TRAINIUM", fontSize = 38.sp, fontWeight = FontWeight.Black, letterSpacing = 10.sp, color = if (isDarkTheme) Color.White else BlueDark, modifier = Modifier.alpha(textAlpha))
-            Spacer(Modifier.height(6.dp))
-            Text(strings.appTagline, fontSize = 15.sp, color = if (isDarkTheme) BlueSoft.copy(0.7f) else BlueAccent.copy(0.7f), modifier = Modifier.alpha(textAlpha))
-
-            Spacer(Modifier.height(40.dp))
-
-            Button(
-                onClick = onNavigateToLogin,
-                modifier = Modifier.fillMaxWidth(0.82f).height(58.dp).alpha(btnAlpha).offset(y = btnOffset.dp),
-                shape = RoundedCornerShape(16.dp),
-                colors = ButtonDefaults.buttonColors(containerColor = Color.Transparent),
-                contentPadding = PaddingValues()
+            Row(
+                modifier = Modifier.fillMaxWidth().padding(end = 8.dp),
+                horizontalArrangement = Arrangement.End,
+                verticalAlignment = Alignment.CenterVertically
             ) {
-                Box(Modifier.fillMaxSize().background(Brush.horizontalGradient(listOf(BlueAccent, BlueElectric)), RoundedCornerShape(16.dp)), contentAlignment = Alignment.Center) {
-                    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.Center) {
-                        Text(strings.startNow, fontSize = 15.sp, fontWeight = FontWeight.Bold, letterSpacing = 2.sp, color = Color.White)
-                        Spacer(Modifier.width(10.dp))
-                        Icon(Icons.Default.ArrowForward, null, tint = Color.White, modifier = Modifier.size(18.dp))
+                IconButton(onClick = onToggleLanguage) {
+                    Icon(
+                        Icons.Default.Language,
+                        contentDescription = strings.language,
+                        tint = if (isDarkTheme) BlueSoft else BlueAccent,
+                        modifier = Modifier.size(24.dp)
+                    )
+                }
+                IconButton(onClick = onToggleTheme) {
+                    Icon(
+                        if (isDarkTheme) Icons.Default.LightMode else Icons.Default.DarkMode,
+                        contentDescription = strings.theme,
+                        tint = if (isDarkTheme) BlueSoft else BlueAccent,
+                        modifier = Modifier.size(26.dp)
+                    )
+                }
+            }
+
+            Column(
+                modifier = Modifier.fillMaxWidth().weight(1f).padding(32.dp),
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.Center
+            ) {
+                Box(contentAlignment = Alignment.Center, modifier = Modifier.scale(logoScale).alpha(logoAlpha)) {
+                    Image(
+                        painter = painterResource(if (isDarkTheme) R.drawable.blanco else R.drawable.negro),
+                        contentDescription = "Logo Trainium",
+                        modifier = Modifier.fillMaxWidth().height(280.dp).padding(horizontal = 20.dp)
+                    )
+                }
+
+                Spacer(Modifier.height(16.dp))
+
+                Text("TRAINIUM", fontSize = 38.sp, fontWeight = FontWeight.Black, letterSpacing = 10.sp, color = if (isDarkTheme) Color.White else BlueDark, modifier = Modifier.alpha(textAlpha))
+                Spacer(Modifier.height(6.dp))
+                Text(strings.appTagline, fontSize = 15.sp, color = if (isDarkTheme) BlueSoft.copy(0.7f) else BlueAccent.copy(0.7f), modifier = Modifier.alpha(textAlpha))
+
+                Spacer(Modifier.height(40.dp))
+
+                Button(
+                    onClick = onNavigateToLogin,
+                    modifier = Modifier.fillMaxWidth(0.82f).height(58.dp).alpha(btnAlpha).offset(y = btnOffset.dp),
+                    shape = RoundedCornerShape(16.dp),
+                    colors = ButtonDefaults.buttonColors(containerColor = Color.Transparent),
+                    contentPadding = PaddingValues()
+                ) {
+                    Box(Modifier.fillMaxSize().background(Brush.horizontalGradient(listOf(BlueAccent, BlueElectric)), RoundedCornerShape(16.dp)), contentAlignment = Alignment.Center) {
+                        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.Center) {
+                            Text(strings.startNow, fontSize = 15.sp, fontWeight = FontWeight.Bold, letterSpacing = 2.sp, color = Color.White)
+                            Spacer(Modifier.width(10.dp))
+                            Icon(Icons.AutoMirrored.Filled.ArrowForward, null, tint = Color.White, modifier = Modifier.size(18.dp))
+                        }
                     }
                 }
             }

@@ -75,14 +75,15 @@ fun RegistroScreen(userId: Int, darkTheme: Boolean, onToggleTheme: () -> Unit, o
                     onBack = onBack,
                     trailing = {
                         IconButton(onClick = { viewModel.loadRegistros(userId) }) {
-                            Icon(Icons.Default.Refresh, null, tint = BlueAccent)
+                            Icon(Icons.Default.Refresh, contentDescription = strings.contentDescRefresh, tint = BlueAccent)
                         }
                     },
                     textColor = textColor,
                     subtitleColor = subtitleColor,
                     onToggleTheme = onToggleTheme,
                     darkTheme = darkTheme,
-                    onToggleLanguage = onToggleLanguage
+                    onToggleLanguage = onToggleLanguage,
+                    strings = strings
                 )
                 Spacer(Modifier.height(16.dp))
             }
@@ -112,7 +113,7 @@ fun RegistroScreen(userId: Int, darkTheme: Boolean, onToggleTheme: () -> Unit, o
                                     viewModel.addRegistro(userId) { }
                                 },
                                 containerColor = BlueAccent, modifier = Modifier.size(50.dp)
-                            ) { Icon(Icons.Default.Add, null, tint = Color.White) }
+                            ) { Icon(Icons.Default.Add, contentDescription = strings.subtitleWeightAdd, tint = Color.White) }
                         }
                     }
                     Spacer(Modifier.height(24.dp))
@@ -167,11 +168,11 @@ fun RegistroScreen(userId: Int, darkTheme: Boolean, onToggleTheme: () -> Unit, o
                                             IconButton(onClick = {
                                                 viewModel.editandoPeso = viewModel.editandoPeso.replace(",", ".")
                                                 viewModel.saveEdit()
-                                            }) { Icon(Icons.Default.Check, null, tint = BlueAccent) }
+                                            }) { Icon(Icons.Default.Check, contentDescription = strings.contentDescApprove, tint = BlueAccent) }
                                         } else {
-                                            IconButton(onClick = { reg.id?.let { viewModel.startEdit(it, reg.peso) } }) { Icon(Icons.Default.Edit, null, tint = textColor.copy(0.5f), modifier = Modifier.size(18.dp)) }
+                                            IconButton(onClick = { reg.id?.let { viewModel.startEdit(it, reg.peso) } }) { Icon(Icons.Default.Edit, contentDescription = strings.edit, tint = textColor.copy(0.5f), modifier = Modifier.size(18.dp)) }
                                         }
-                                        IconButton(onClick = { reg.id?.let { viewModel.deleteRegistro(it) } }) { Icon(Icons.Default.Delete, null, tint = Color(0xFFFF6B6B).copy(0.7f), modifier = Modifier.size(18.dp)) }
+                                        IconButton(onClick = { reg.id?.let { viewModel.deleteRegistro(it) } }) { Icon(Icons.Default.Delete, contentDescription = strings.contentDescDelete, tint = Color(0xFFFF6B6B).copy(0.7f), modifier = Modifier.size(18.dp)) }
                                     }
                                 }
                             }

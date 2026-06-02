@@ -1,7 +1,6 @@
 package com.example.trainium2
 
 import android.net.Uri
-import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.core.*
@@ -37,6 +36,7 @@ import com.example.trainium2.data.i18n.LocalStrings
 import com.example.trainium2.ui.theme.*
 import com.example.trainium2.ui.viewmodel.EditProfileViewModel
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
 
 @Composable
@@ -54,6 +54,10 @@ fun EditProfileScreen(
     val viewModel = viewModel<EditProfileViewModel>()
     val scope = rememberCoroutineScope()
     val context = LocalContext.current
+    val snackbarHostState = remember { SnackbarHostState() }
+    val notifManager = remember { NotificationSettingsManager(context) }
+    var selectedMinutes by remember { mutableStateOf(NotificationSettingsManager.DEFAULT_MINUTES) }
+    LaunchedEffect(Unit) { notifManager.minutesBefore.collectLatest { selectedMinutes = it } }
 
     val galeriaLauncher = rememberLauncherForActivityResult(ActivityResultContracts.GetContent()) { uri: Uri? ->
         uri?.let { scope.launch { val base64 = uriToBase64(it, context.contentResolver); viewModel.setFoto(base64) } }
@@ -108,7 +112,8 @@ fun EditProfileScreen(
                 subtitleColor = subtitleColor,
                 onToggleTheme = onToggleTheme,
                 darkTheme = darkTheme,
-                onToggleLanguage = onToggleLanguage
+                onToggleLanguage = onToggleLanguage,
+                strings = strings
             )
 
             if (viewModel.isLoading) {
@@ -193,7 +198,12 @@ fun EditProfileScreen(
                 Button(
                     onClick = {
                         viewModel.saveUser(userId) {
-                            Toast.makeText(context, strings.profileUpdated, Toast.LENGTH_SHORT).show()
+                            scope.launch {
+                                snackbarHostState.showSnackbar(
+                                    message = strings.profileUpdated,
+                                    duration = SnackbarDuration.Short
+                                )
+                            }
                         }
                     },
                     modifier = Modifier.fillMaxWidth().height(54.dp).alpha(formAlpha).shadow(12.dp, RoundedCornerShape(16.dp)),
@@ -221,7 +231,7 @@ fun EditProfileScreen(
                     Box(Modifier.fillMaxWidth().background(premCardBg).padding(18.dp)) {
                         Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
                             Box(Modifier.size(44.dp).background(if (viewModel.isPremium) Color(0xFFFFD700).copy(0.15f) else BlueAccent.copy(0.1f), CircleShape), contentAlignment = Alignment.Center) {
-                                Icon(Icons.Default.Star, null, tint = if (viewModel.isPremium) Color(0xFFFFD700) else textColor.copy(0.3f), modifier = Modifier.size(24.dp))
+                                Icon(Icons.Default.Star, contentDescription = strings.premium, tint = if (viewModel.isPremium) Color(0xFFFFD700) else textColor.copy(0.3f), modifier = Modifier.size(24.dp))
                             }
                             Spacer(Modifier.width(14.dp))
                             Column(Modifier.weight(1f)) {
@@ -239,12 +249,77 @@ fun EditProfileScreen(
                 }
 
                 Spacer(Modifier.height(16.dp))
-                HorizontalDivider(Modifier.padding(vertical = 6.dp), 1.dp, textColor.copy(0.06f))
+
+                Card(
+                    modifier = Modifier.fillMaxWidth().shadow(4.dp, RoundedCornerShape(18.dp)),
+                    shape = RoundedCornerShape(18.dp),
+                    colors = CardDefaults.cardColors(containerColor = cardBg)
+                ) {
+                    Column(Modifier.padding(18.dp)) {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Box(
+                                Modifier.size(36.dp).background(BlueAccent.copy(0.12f), RoundedCornerShape(10.dp)),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                Icon(Icons.Default.Notifications, contentDescription = null, tint = BlueAccent, modifier = Modifier.size(20.dp))
+                            }
+                            Spacer(Modifier.width(12.dp))
+                            Column {
+                                Text(strings.notificationsTitle, fontWeight = FontWeight.Bold, color = textColor, fontSize = 14.sp)
+                                Text(strings.notifyBeforeLabel, fontSize = 11.sp, color = textColor.copy(0.45f))
+                            }
+                        }
+                        Spacer(Modifier.height(14.dp))
+                        Row(
+                            Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.spacedBy(6.dp)
+                        ) {
+                            NotificationSettingsManager.OPTIONS.forEach { min ->
+                                val label = when (min) {
+                                    60  -> "1h"
+                                    120 -> "2h"
+                                    else -> "${min}m"
+                                }
+                                val sel = selectedMinutes == min
+                                FilterChip(
+                                    selected = sel,
+                                    onClick = {
+                                        selectedMinutes = min
+                                        scope.launch { notifManager.setMinutesBefore(min) }
+                                    },
+                                    label = { Text(label, fontSize = 12.sp, fontWeight = if (sel) FontWeight.Bold else FontWeight.Normal) },
+                                    colors = FilterChipDefaults.filterChipColors(
+                                        selectedContainerColor = BlueAccent,
+                                        selectedLabelColor = Color.White,
+                                        labelColor = textColor.copy(0.6f),
+                                        containerColor = if (darkTheme) Color(0xFF1E2D52) else Color(0xFFF0F4FF)
+                                    ),
+                                    border = FilterChipDefaults.filterChipBorder(
+                                        borderColor = BlueAccent.copy(0.2f), enabled = true, selected = sel
+                                    )
+                                )
+                            }
+                        }
+                    }
+                }
+
+                HorizontalDivider(Modifier.padding(vertical = 10.dp), 1.dp, textColor.copy(0.06f))
                 OutlinedButton(onClick = { onNavigateToHistorial() }, modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(14.dp), border = androidx.compose.foundation.BorderStroke(1.dp, BlueAccent.copy(0.3f))) {
                     Text(strings.paymentHistory, color = BlueAccent)
                 }
                 Spacer(Modifier.height(20.dp))
             }
+        }
+        SnackbarHost(
+            hostState = snackbarHostState,
+            modifier = Modifier.align(Alignment.BottomCenter).padding(16.dp)
+        ) { data ->
+            Snackbar(
+                snackbarData = data,
+                containerColor = if (darkTheme) Color(0xFF1E3A6A) else Color(0xFF1C3461),
+                contentColor = Color.White,
+                shape = RoundedCornerShape(14.dp)
+            )
         }
     }
 }

@@ -135,8 +135,28 @@ val StringsEu = AppStrings(
     machineOccupiedSchedule = "Makina ordutegi horretan okupatuta dago jada",
     userReservationConflict = "Dagoeneko erreserba bat duzu ordutegi horretan",
 
+    contentDescRefresh = "Eguneratu",
+    contentDescDelete = "Ezabatu",
+    contentDescAdd = "Gehitu",
+    contentDescBack = "Itzuli",
+    contentDescNext = "Hurrengoa",
+    contentDescSettings = "Ezarpenak",
+    contentDescApprove = "Onartu",
+    contentDescReject = "Ukatu",
     theme = "Gaia",
     language = "Hizkuntza",
     selectLanguage = "Hizkuntza hautatu",
-    close = "Itxi"
+    close = "Itxi",
+    expiresToday = "Gaur iraungitzen da!",
+    daysLeft = "egun geratzen",
+    dateFromTo = "%s(e)tik %s(e)ra",
+
+    filterPast = "Iraganak",
+    addToCalendar = "Egutegiara gehitu",
+    addToCalendarMessage = "Gertaera hau gailuaren egutegian gehitu nahi duzu?",
+    reservationBooked = "Erreserba egina!",
+    notificationsTitle = "Jakinarazpenak",
+    notifyBeforeLabel = "Abisatu aurretik:",
+    reminderTitle = "Erreserba Gogoraraztea",
+    reminderBody = "%1\$s: %2\$s – %3\$s"
 )

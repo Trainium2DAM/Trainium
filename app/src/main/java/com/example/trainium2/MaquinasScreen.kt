@@ -1,6 +1,5 @@
 package com.example.trainium2
 
-import android.widget.Toast
 import androidx.compose.animation.core.*
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
@@ -10,10 +9,9 @@ import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
-import androidx.compose.material.icons.filled.ArrowBack
-import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Build
 import androidx.compose.material.icons.filled.CheckCircle
+import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -31,11 +29,11 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.trainium2.models.Maquina
-import com.example.trainium2.models.Reserva
 import com.example.trainium2.data.i18n.LocalStrings
 import com.example.trainium2.ui.theme.*
 import com.example.trainium2.ui.viewmodel.MaquinasViewModel
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 import java.time.LocalDate
 import java.time.LocalTime
 import java.time.ZoneId
@@ -54,6 +52,8 @@ fun MaquinasScreen(
     val strings = LocalStrings.current
     val viewModel = viewModel<MaquinasViewModel>()
     val context = LocalContext.current
+    val scope = rememberCoroutineScope()
+    val snackbarHostState = remember { SnackbarHostState() }
 
     var mostrarPickerMantenimientoDesde by remember { mutableStateOf(false) }
     var mostrarPickerMantenimientoHasta by remember { mutableStateOf(false) }
@@ -64,9 +64,32 @@ fun MaquinasScreen(
     var mostrarSelectorTiempo by remember { mutableStateOf(false) }
     var mostrarDatePickerReserva by remember { mutableStateOf(false) }
 
+    LaunchedEffect(viewModel.reservaExitosa) {
+        viewModel.reservaExitosa?.let { res ->
+            scope.launch {
+                NotificationHelper.rescheduleNextReservationNotification(context, userId)
+            }
+            val result = snackbarHostState.showSnackbar(
+                message = strings.reservationBooked,
+                actionLabel = strings.cancel,
+                duration = SnackbarDuration.Long
+            )
+            if (result == SnackbarResult.ActionPerformed) {
+                val idToCancel = res.id ?: return@let
+                viewModel.cancelUltimaReserva()
+                scope.launch {
+                    NotificationHelper.cancelScheduledNotification(context, idToCancel)
+                    NotificationHelper.rescheduleNextReservationNotification(context, userId)
+                }
+            } else {
+                viewModel.clearReservaExitosa()
+            }
+        }
+    }
+
     LaunchedEffect(viewModel.errorMessage) {
         viewModel.errorMessage?.let { msg ->
-            Toast.makeText(context, msg, Toast.LENGTH_SHORT).show()
+            snackbarHostState.showSnackbar(message = msg, duration = SnackbarDuration.Short)
             viewModel.clearError()
         }
     }
@@ -90,10 +113,6 @@ fun MaquinasScreen(
         }
     }
 
-    fun eliminarMaquina(id: Int) {
-        viewModel.deleteMachine(id)
-    }
-
     LaunchedEffect(Unit) { viewModel.loadMachines() }
 
     Box(Modifier.fillMaxSize().background(bgBrush)) {
@@ -106,86 +125,101 @@ fun MaquinasScreen(
                 subtitleColor = subtitleColor,
                 onToggleTheme = onToggleTheme,
                 darkTheme = darkTheme,
-                onToggleLanguage = onToggleLanguage
+                onToggleLanguage = onToggleLanguage,
+                strings = strings
             )
             Spacer(Modifier.height(12.dp))
 
-                if (viewModel.isLoading) {
-                    Column(Modifier.fillMaxSize().padding(20.dp)) {
-                        SkeletonCard(modifier = Modifier.fillMaxWidth(), height = 100)
-                        Spacer(Modifier.height(16.dp))
-                        SkeletonCard(modifier = Modifier.fillMaxWidth(), height = 100)
-                        Spacer(Modifier.height(16.dp))
-                        SkeletonCard(modifier = Modifier.fillMaxWidth(), height = 100)
-                    }
-                } else {
-                    LazyColumn(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                        itemsIndexed(viewModel.listaMaquinas) { index, maquina ->
-                            var itemVisible by remember { mutableStateOf(false) }
-                            LaunchedEffect(Unit) { delay(index * 50L); itemVisible = true }
-                            val itemAlpha by animateFloatAsState(if (itemVisible) 1f else 0f, tween(400))
-                            Card(
-                                Modifier.fillMaxWidth().alpha(itemAlpha).shadow(6.dp, RoundedCornerShape(16.dp)),
-                                shape = RoundedCornerShape(16.dp),
-                                colors = CardDefaults.cardColors(containerColor = cardBg)
-                            ) {
-                                Column(Modifier.padding(14.dp)) {
-                                    Row(verticalAlignment = Alignment.CenterVertically) {
-                                        val resId = remember(maquina.id) {
-                                            val id = context.resources.getIdentifier("maquina${maquina.id}", "drawable", context.packageName)
-                                            if (id == 0) context.resources.getIdentifier("blanco", "drawable", context.packageName) else id
+            if (viewModel.isLoading) {
+                Column(Modifier.fillMaxSize().padding(20.dp)) {
+                    SkeletonCard(modifier = Modifier.fillMaxWidth(), height = 100)
+                    Spacer(Modifier.height(16.dp))
+                    SkeletonCard(modifier = Modifier.fillMaxWidth(), height = 100)
+                    Spacer(Modifier.height(16.dp))
+                    SkeletonCard(modifier = Modifier.fillMaxWidth(), height = 100)
+                }
+            } else {
+                LazyColumn(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                    itemsIndexed(viewModel.listaMaquinas) { index, maquina ->
+                        var itemVisible by remember { mutableStateOf(false) }
+                        LaunchedEffect(Unit) { delay(index * 50L); itemVisible = true }
+                        val itemAlpha by animateFloatAsState(if (itemVisible) 1f else 0f, tween(400))
+                        Card(
+                            Modifier.fillMaxWidth().alpha(itemAlpha).shadow(6.dp, RoundedCornerShape(16.dp)),
+                            shape = RoundedCornerShape(16.dp),
+                            colors = CardDefaults.cardColors(containerColor = cardBg)
+                        ) {
+                            Column(Modifier.padding(14.dp)) {
+                                Row(verticalAlignment = Alignment.CenterVertically) {
+                                    val resId = remember(maquina.id) {
+                                        val id = context.resources.getIdentifier("maquina${maquina.id}", "drawable", context.packageName)
+                                        if (id == 0) context.resources.getIdentifier("blanco", "drawable", context.packageName) else id
+                                    }
+                                    Image(painterResource(resId), null, Modifier.size(80.dp).clip(RoundedCornerShape(12.dp)), contentScale = ContentScale.Crop)
+                                    Spacer(Modifier.width(12.dp))
+                                    Column(Modifier.weight(1f)) {
+                                        Text(maquina.nombre, fontWeight = FontWeight.Bold, color = textColor)
+                                        if (!maquina.operativa) Text(strings.outOfService, color = Color(0xFFFF6B6B), fontSize = 11.sp, fontWeight = FontWeight.Bold)
+                                        else maquina.tipo?.let { Text(it, fontSize = 12.sp, color = subtitleColor) }
+                                    }
+                                    if (isAdmin) {
+                                        IconButton(onClick = { alternarEstadoOperativo(maquina) }) {
+                                            Icon(if (maquina.operativa) Icons.Default.Build else Icons.Default.CheckCircle, contentDescription = if (maquina.operativa) strings.maintenance else strings.contentDescApprove, tint = if (maquina.operativa) subtitleColor else BlueAccent)
                                         }
-                                        Image(painterResource(resId), null, Modifier.size(80.dp).clip(RoundedCornerShape(12.dp)), contentScale = ContentScale.Crop)
-                                        Spacer(Modifier.width(12.dp))
-                                        Column(Modifier.weight(1f)) {
-                                            Text(maquina.nombre, fontWeight = FontWeight.Bold, color = textColor)
-                                            if (!maquina.operativa) Text(strings.outOfService, color = Color(0xFFFF6B6B), fontSize = 11.sp, fontWeight = FontWeight.Bold)
-                                            else maquina.tipo?.let { Text(it, fontSize = 12.sp, color = subtitleColor) }
-                                        }
-                                        if (isAdmin) {
-                                            IconButton(onClick = { alternarEstadoOperativo(maquina) }) {
-                                                Icon(if (maquina.operativa) Icons.Default.Build else Icons.Default.CheckCircle, null, tint = if (maquina.operativa) subtitleColor else BlueAccent)
-                                            }
-                                            IconButton(onClick = { eliminarMaquina(maquina.id) }) {
-                                                Icon(Icons.Default.Delete, null, tint = Color(0xFFFF6B6B))
-                                            }
+                                        IconButton(onClick = { viewModel.deleteMachine(maquina.id) }) {
+                                            Icon(Icons.Default.Delete, contentDescription = strings.contentDescDelete, tint = Color(0xFFFF6B6B))
                                         }
                                     }
-                                    Spacer(Modifier.height(6.dp))
-                                    maquina.descripcion?.let { Text(it, fontSize = 13.sp, color = textColor.copy(0.6f)) }
-                                    Spacer(Modifier.height(10.dp))
-                                    Button(
-                                        onClick = {
-                                            viewModel.maquinaParaReservar = maquina.id
-                                            mostrarDatePickerReserva = true
-                                        },
-                                        enabled = maquina.operativa,
-                                        modifier = Modifier.fillMaxWidth(),
-                                        shape = RoundedCornerShape(12.dp),
-                                        colors = ButtonDefaults.buttonColors(containerColor = Color.Transparent, disabledContainerColor = textColor.copy(0.05f)),
-                                        contentPadding = PaddingValues()
-                                    ) {
-                                        Box(Modifier.fillMaxWidth().height(42.dp).background(
-                                            if (maquina.operativa) Brush.horizontalGradient(listOf(BlueAccent, BlueElectric)) else Brush.horizontalGradient(listOf(textColor.copy(0.1f), textColor.copy(0.1f))),
-                                            RoundedCornerShape(12.dp)), contentAlignment = Alignment.Center) {
-                                            Text(if (maquina.operativa) strings.reserve else strings.maintenance, fontWeight = FontWeight.SemiBold, color = Color.White)
-                                        }
+                                }
+                                Spacer(Modifier.height(6.dp))
+                                maquina.descripcion?.let { Text(it, fontSize = 13.sp, color = textColor.copy(0.6f)) }
+                                Spacer(Modifier.height(10.dp))
+                                Button(
+                                    onClick = {
+                                        viewModel.maquinaParaReservar = maquina.id
+                                        mostrarDatePickerReserva = true
+                                    },
+                                    enabled = maquina.operativa,
+                                    modifier = Modifier.fillMaxWidth(),
+                                    shape = RoundedCornerShape(12.dp),
+                                    colors = ButtonDefaults.buttonColors(containerColor = Color.Transparent, disabledContainerColor = textColor.copy(0.05f)),
+                                    contentPadding = PaddingValues()
+                                ) {
+                                    Box(Modifier.fillMaxWidth().height(42.dp).background(
+                                        if (maquina.operativa) Brush.horizontalGradient(listOf(BlueAccent, BlueElectric)) else Brush.horizontalGradient(listOf(textColor.copy(0.1f), textColor.copy(0.1f))),
+                                        RoundedCornerShape(12.dp)), contentAlignment = Alignment.Center) {
+                                        Text(if (maquina.operativa) strings.reserve else strings.maintenance, fontWeight = FontWeight.SemiBold, color = Color.White)
                                     }
                                 }
                             }
                         }
                     }
                 }
+            }
         }
+
         if (isAdmin) {
             FloatingActionButton(
                 onClick = { viewModel.showingDialogAdd = true },
-                modifier = Modifier.align(Alignment.BottomEnd).padding(16.dp),
+                modifier = Modifier.align(Alignment.BottomEnd).padding(bottom = 72.dp, end = 16.dp),
                 containerColor = BlueAccent,
                 contentColor = Color.White
             ) {
-                Icon(Icons.Default.Add, strings.addMachine)
+                Icon(Icons.Default.Add, contentDescription = strings.addMachine)
             }
+        }
+
+        SnackbarHost(
+            hostState = snackbarHostState,
+            modifier = Modifier.align(Alignment.BottomCenter).padding(bottom = 16.dp)
+        ) { data ->
+            Snackbar(
+                snackbarData = data,
+                containerColor = if (darkTheme) Color(0xFF1E3A6A) else Color(0xFF1C3461),
+                contentColor = Color.White,
+                actionColor = Color(0xFF82B4FF),
+                shape = RoundedCornerShape(14.dp)
+            )
         }
     }
 
@@ -204,11 +238,7 @@ fun MaquinasScreen(
                 }) { Text(strings.ok, color = MaterialTheme.colorScheme.primary, fontWeight = FontWeight.Bold) }
             },
             dismissButton = { TextButton(onClick = { mostrarPickerMantenimientoDesde = false }) { Text(strings.cancel, color = textColor.copy(0.5f)) } },
-            colors = DatePickerDefaults.colors(
-                selectedDayContentColor = Color.White, selectedDayContainerColor = BlueAccent,
-                todayContentColor = BlueAccent, todayDateBorderColor = BlueAccent,
-                dayContentColor = textColor, titleContentColor = Color.White, headlineContentColor = Color.White
-            )
+            colors = DatePickerDefaults.colors(selectedDayContentColor = Color.White, selectedDayContainerColor = BlueAccent, todayContentColor = BlueAccent, todayDateBorderColor = BlueAccent, dayContentColor = textColor, titleContentColor = Color.White, headlineContentColor = Color.White)
         ) { DatePicker(state = datePickerState) }
     }
 
@@ -228,11 +258,7 @@ fun MaquinasScreen(
                 }) { Text(strings.ok, color = MaterialTheme.colorScheme.primary, fontWeight = FontWeight.Bold) }
             },
             dismissButton = { TextButton(onClick = { mostrarPickerMantenimientoHasta = false }) { Text(strings.cancel, color = textColor.copy(0.5f)) } },
-            colors = DatePickerDefaults.colors(
-                selectedDayContentColor = Color.White, selectedDayContainerColor = BlueAccent,
-                todayContentColor = BlueAccent, todayDateBorderColor = BlueAccent,
-                dayContentColor = textColor, titleContentColor = Color.White, headlineContentColor = Color.White
-            )
+            colors = DatePickerDefaults.colors(selectedDayContentColor = Color.White, selectedDayContainerColor = BlueAccent, todayContentColor = BlueAccent, todayDateBorderColor = BlueAccent, dayContentColor = textColor, titleContentColor = Color.White, headlineContentColor = Color.White)
         ) { DatePicker(state = datePickerState) }
     }
 
@@ -241,12 +267,12 @@ fun MaquinasScreen(
             onDismiss = { mostrarTimePickerMantenimientoDesde = false },
             onConfirm = { h, min ->
                 viewModel.horaDesdeM = String.format("%02d:%02d", h, min)
-                Toast.makeText(context, strings.selectEndDateToast, Toast.LENGTH_SHORT).show()
+                scope.launch {
+                    snackbarHostState.showSnackbar(strings.selectEndDateToast, duration = SnackbarDuration.Short)
+                }
                 mostrarPickerMantenimientoHasta = true
             },
-            title = strings.fromWhatTime,
-            initialHour = 12,
-            initialMinute = 0
+            title = strings.fromWhatTime, initialHour = 12, initialMinute = 0
         )
     }
 
@@ -256,16 +282,10 @@ fun MaquinasScreen(
             onConfirm = { h, min ->
                 viewModel.horaHastaM = String.format("%02d:%02d", h, min)
                 viewModel.maquinaParaMantenimiento?.let { machineId ->
-                    viewModel.startMaintenance(
-                        machineId,
-                        "${viewModel.fechaDesdeM} ${viewModel.horaDesdeM}",
-                        "${viewModel.fechaHastaM} ${viewModel.horaHastaM}"
-                    )
+                    viewModel.startMaintenance(machineId, "${viewModel.fechaDesdeM} ${viewModel.horaDesdeM}", "${viewModel.fechaHastaM} ${viewModel.horaHastaM}")
                 }
             },
-            title = strings.untilWhatTime,
-            initialHour = 12,
-            initialMinute = 0
+            title = strings.untilWhatTime, initialHour = 12, initialMinute = 0
         )
     }
 
@@ -285,19 +305,13 @@ fun MaquinasScreen(
                         val cal = Calendar.getInstance().apply { timeInMillis = mReserva }
                         viewModel.fechaSeleccionada = String.format("%d-%02d-%02d", cal.get(Calendar.YEAR), cal.get(Calendar.MONTH) + 1, cal.get(Calendar.DAY_OF_MONTH))
                         mostrarDatePickerReserva = false
-                        viewModel.maquinaParaReservar?.let { machineId ->
-                            viewModel.loadReservationsForSlot(machineId, viewModel.fechaSeleccionada)
-                        }
+                        viewModel.maquinaParaReservar?.let { viewModel.loadReservationsForSlot(it, viewModel.fechaSeleccionada) }
                         mostrarSelectorHora = true
                     } else { mostrarDatePickerReserva = false }
                 }) { Text(strings.ok, color = MaterialTheme.colorScheme.primary, fontWeight = FontWeight.Bold) }
             },
             dismissButton = { TextButton(onClick = { mostrarDatePickerReserva = false }) { Text(strings.cancel, color = textColor.copy(0.5f)) } },
-            colors = DatePickerDefaults.colors(
-                selectedDayContentColor = Color.White, selectedDayContainerColor = BlueAccent,
-                todayContentColor = BlueAccent, todayDateBorderColor = BlueAccent,
-                dayContentColor = textColor, titleContentColor = Color.White, headlineContentColor = Color.White
-            )
+            colors = DatePickerDefaults.colors(selectedDayContentColor = Color.White, selectedDayContainerColor = BlueAccent, todayContentColor = BlueAccent, todayDateBorderColor = BlueAccent, dayContentColor = textColor, titleContentColor = Color.White, headlineContentColor = Color.White)
         ) { DatePicker(state = datePickerState) }
     }
 
@@ -334,9 +348,7 @@ fun MaquinasScreen(
                 if (ocupadoUser) return@AppTimePickerDialog String.format(strings.userReservedAt, selStr)
                 null
             },
-            title = strings.whatTime,
-            initialHour = hInicial,
-            initialMinute = mInicial
+            title = strings.whatTime, initialHour = hInicial, initialMinute = mInicial
         )
     }
 
@@ -353,6 +365,7 @@ fun MaquinasScreen(
                 viewModel.maquinaParaReservar?.let { machineId ->
                     viewModel.reserveTimeSlot(machineId, userId, viewModel.fechaSeleccionada, viewModel.horaSeleccionada, horaFin)
                 }
+                mostrarSelectorTiempo = false
             },
             onValidate = { h, m ->
                 val finTotal = h * 60 + m
@@ -373,9 +386,7 @@ fun MaquinasScreen(
                 if (chocaUser) return@AppTimePickerDialog strings.userReservationConflict
                 null
             },
-            title = strings.untilWhatTime,
-            initialHour = finDefaultMin / 60,
-            initialMinute = finDefaultMin % 60
+            title = strings.untilWhatTime, initialHour = finDefaultMin / 60, initialMinute = finDefaultMin % 60
         )
     }
 

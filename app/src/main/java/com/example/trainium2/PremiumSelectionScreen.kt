@@ -57,6 +57,7 @@ fun PremiumSelectionScreen(
     val bgBrush = if (darkTheme) Brush.verticalGradient(listOf(BlueDark, BlueMid, BlueDeep)) else Brush.verticalGradient(listOf(Color(0xFFF0F4FF), Color(0xFFD6E4FF)))
 
     LaunchedEffect(Unit) { delay(100); visible = true }
+    LaunchedEffect(userId) { viewModel.loadUser(userId) }
 
     Box(Modifier.fillMaxSize().background(bgBrush)) {
         Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(horizontal = 20.dp)) {
@@ -65,13 +66,14 @@ fun PremiumSelectionScreen(
                 subtitle = strings.subtitlePremium,
                 onBack = onBack,
                 trailing = {
-                    Icon(Icons.Default.WorkspacePremium, null, tint = Color(0xFFFFD700), modifier = Modifier.padding(end = 4.dp))
+                    Icon(Icons.Default.WorkspacePremium, contentDescription = strings.premiumPlans, tint = Color(0xFFFFD700), modifier = Modifier.padding(end = 4.dp))
                 },
                 textColor = textColor,
                 subtitleColor = subtitleColor,
                 onToggleTheme = onToggleTheme,
                 darkTheme = darkTheme,
-                onToggleLanguage = onToggleLanguage
+                onToggleLanguage = onToggleLanguage,
+                strings = strings
             )
 
             Spacer(Modifier.height(30.dp))
@@ -87,7 +89,7 @@ fun PremiumSelectionScreen(
                 ) {
                     Row(Modifier.padding(20.dp), verticalAlignment = Alignment.CenterVertically) {
                         Box(Modifier.size(40.dp).background(BlueAccent.copy(0.1f), RoundedCornerShape(10.dp)), contentAlignment = Alignment.Center) {
-                            Icon(Icons.Default.Star, null, tint = Color(0xFFFFD700), modifier = Modifier.size(22.dp))
+                            Icon(Icons.Default.Star, contentDescription = strings.premium, tint = Color(0xFFFFD700), modifier = Modifier.size(22.dp))
                         }
                         Spacer(Modifier.width(14.dp))
                         Column(Modifier.weight(1f)) {
@@ -97,10 +99,20 @@ fun PremiumSelectionScreen(
                         Text("${plan.precio}€", fontSize = 24.sp, fontWeight = FontWeight.Bold, color = BlueAccent)
                         if (isSelected) {
                             Spacer(Modifier.width(10.dp))
-                            Icon(Icons.Default.CheckCircle, null, tint = BlueAccent, modifier = Modifier.size(20.dp))
+                            Icon(Icons.Default.CheckCircle, contentDescription = strings.ok, tint = BlueAccent, modifier = Modifier.size(20.dp))
                         }
                     }
                 }
+            }
+
+            LaunchedEffect(viewModel.planSeleccionado, viewModel.esRenovacion, viewModel.fechaFinActual) {
+                viewModel.calculateDates()
+            }
+
+            if (viewModel.fechaInicioCalculada.isNotBlank() && viewModel.fechaFinCalculada.isNotBlank()) {
+                Spacer(Modifier.height(12.dp))
+                val rangeText = strings.dateFromTo.format(viewModel.fechaInicioCalculada, viewModel.fechaFinCalculada)
+                Text(rangeText, fontSize = 13.sp, color = BlueAccent, fontWeight = FontWeight.SemiBold, modifier = Modifier.alpha(alphaAnim))
             }
 
             Spacer(Modifier.height(24.dp))
@@ -114,7 +126,7 @@ fun PremiumSelectionScreen(
                         shape = RoundedCornerShape(12.dp),
                         colors = ButtonDefaults.buttonColors(containerColor = if (isSelected) BlueAccent else cardBg)
                     ) {
-                        Icon(icon, null, tint = if (isSelected) Color.White else textColor.copy(0.6f), modifier = Modifier.size(16.dp))
+                        Icon(icon, contentDescription = metodo, tint = if (isSelected) Color.White else textColor.copy(0.6f), modifier = Modifier.size(16.dp))
                         Spacer(Modifier.width(6.dp))
                         Text(metodo, fontSize = 12.sp, color = if (isSelected) Color.White else textColor)
                     }
@@ -147,7 +159,7 @@ fun PremiumSelectionScreen(
             ) {
                 Box(Modifier.fillMaxSize().background(Brush.horizontalGradient(listOf(BlueAccent, BlueElectric)), RoundedCornerShape(16.dp)), contentAlignment = Alignment.Center) {
                     Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.Center) {
-                        Icon(Icons.Default.CheckCircle, null, tint = Color.White, modifier = Modifier.size(18.dp))
+                        Icon(Icons.Default.CheckCircle, contentDescription = strings.confirmPayment, tint = Color.White, modifier = Modifier.size(18.dp))
                         Spacer(Modifier.width(8.dp))
                         Text(strings.confirmPayment, fontWeight = FontWeight.Bold, color = Color.White)
                     }

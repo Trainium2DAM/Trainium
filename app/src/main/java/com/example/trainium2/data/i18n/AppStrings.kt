@@ -135,8 +135,30 @@ data class AppStrings(
     val machineOccupiedSchedule: String,
     val userReservationConflict: String,
 
+    val contentDescRefresh: String,
+    val contentDescDelete: String,
+    val contentDescAdd: String,
+    val contentDescBack: String,
+    val contentDescNext: String,
+    val contentDescSettings: String,
+    val contentDescApprove: String,
+    val contentDescReject: String,
+
     val theme: String,
     val language: String,
     val selectLanguage: String,
-    val close: String
+    val close: String,
+
+    val expiresToday: String,
+    val daysLeft: String,
+    val dateFromTo: String,
+
+    val filterPast: String,
+    val addToCalendar: String,
+    val addToCalendarMessage: String,
+    val reservationBooked: String,
+    val notificationsTitle: String,
+    val notifyBeforeLabel: String,
+    val reminderTitle: String,
+    val reminderBody: String
 )

@@ -8,6 +8,7 @@ import androidx.lifecycle.viewModelScope
 import com.example.trainium2.AppConfig
 import com.example.trainium2.di.ServiceLocator
 import com.example.trainium2.models.Pago
+import com.example.trainium2.models.Usuario
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -30,6 +31,38 @@ class PremiumSelectionViewModel : ViewModel() {
     var cvv by mutableStateOf("")
     var isLoading by mutableStateOf(false)
     var success by mutableStateOf(false)
+    var esRenovacion by mutableStateOf(false)
+    var fechaFinActual by mutableStateOf<String?>(null)
+    var fechaInicioCalculada by mutableStateOf("")
+    var fechaFinCalculada by mutableStateOf("")
+
+    fun loadUser(id: Int) {
+        viewModelScope.launch {
+            val user = withContext(Dispatchers.IO) {
+                ServiceLocator.usuarioRepository.getUserById(id)
+            }
+            esRenovacion = user?.premium == true
+            fechaFinActual = user?.fechaFin
+        }
+    }
+
+    fun calculateDates() {
+        val plan = planes.getOrNull(planSeleccionado) ?: return
+        val cal = Calendar.getInstance()
+
+        val finActual = fechaFinActual
+        if (esRenovacion && !finActual.isNullOrBlank()) {
+            val fechaActual = AppConfig.FORMAT_ISO_DATE.parse(finActual) ?: Date()
+            cal.time = fechaActual
+            fechaInicioCalculada = finActual
+        } else {
+            cal.time = Date()
+            fechaInicioCalculada = AppConfig.FORMAT_ISO_DATE.format(cal.time)
+        }
+
+        cal.add(Calendar.MONTH, plan.meses)
+        fechaFinCalculada = AppConfig.FORMAT_ISO_DATE.format(cal.time)
+    }
 
     fun validateCard(): Boolean {
         val limpio = numeroTarjeta.filter { it.isDigit() }
@@ -45,7 +78,15 @@ class PremiumSelectionViewModel : ViewModel() {
 
                 val cal = Calendar.getInstance()
                 cal.add(Calendar.MONTH, plan.meses)
-                val fin = AppConfig.FORMAT_ISO_DATE.format(cal.time)
+                var fin = AppConfig.FORMAT_ISO_DATE.format(cal.time)
+
+                val finActual = fechaFinActual
+                if (esRenovacion && !finActual.isNullOrBlank()) {
+                    val fechaActual = AppConfig.FORMAT_ISO_DATE.parse(finActual) ?: Date()
+                    cal.time = fechaActual
+                    cal.add(Calendar.MONTH, plan.meses)
+                    fin = AppConfig.FORMAT_ISO_DATE.format(cal.time)
+                }
 
                 val pago = Pago(
                     idUsuario = idUsuario,

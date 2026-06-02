@@ -135,10 +135,31 @@ val StringsDe = AppStrings(
     machineOccupiedSchedule = "Das Gerät ist zu dieser Zeit bereits belegt",
     userReservationConflict = "Sie haben bereits eine Reservierung zu dieser Zeit",
 
+    contentDescRefresh = "Aktualisieren",
+    contentDescDelete = "Löschen",
+    contentDescAdd = "Hinzufügen",
+    contentDescBack = "Zurück",
+    contentDescNext = "Weiter",
+    contentDescSettings = "Einstellungen",
+    contentDescApprove = "Genehmigen",
+    contentDescReject = "Ablehnen",
     theme = "Thema",
     language = "Sprache",
     selectLanguage = "Sprache auswählen",
-    close = "Schließen"
+    close = "Schließen",
+
+    expiresToday = "Läuft heute ab!",
+    daysLeft = "Tage übrig",
+    dateFromTo = "Vom %s bis %s",
+
+    filterPast = "Vergangene",
+    addToCalendar = "Zum Kalender hinzuf�gen",
+    addToCalendarMessage = "M�chten Sie dieses Ereignis zum Kalender Ihres Ger�ts hinzuf�gen?",
+    reservationBooked = "Reservierung abgeschlossen!",
+    notificationsTitle = "Benachrichtigungen",
+    notifyBeforeLabel = "Benachrichtigung vor:",
+    reminderTitle = "Reservierungserinnerung",
+    reminderBody = "%1${"$"}s: %2${"$"}s � %3${"$"}s"
 )
 
 val StringsPt = AppStrings(
@@ -276,10 +297,31 @@ val StringsPt = AppStrings(
     machineOccupiedSchedule = "A máquina já está ocupada nesse horário",
     userReservationConflict = "Você já tem uma reserva nesse horário",
 
+    contentDescRefresh = "Atualizar",
+    contentDescDelete = "Excluir",
+    contentDescAdd = "Adicionar",
+    contentDescBack = "Voltar",
+    contentDescNext = "Próximo",
+    contentDescSettings = "Configurações",
+    contentDescApprove = "Aprovar",
+    contentDescReject = "Rejeitar",
     theme = "Tema",
     language = "Idioma",
     selectLanguage = "Selecionar idioma",
-    close = "Fechar"
+    close = "Fechar",
+
+    expiresToday = "Expira hoje!",
+    daysLeft = "dias restantes",
+    dateFromTo = "De %s a %s",
+
+    filterPast = "Passadas",
+    addToCalendar = "Adicionar ao calend�rio",
+    addToCalendarMessage = "Deseja adicionar este evento ao calend�rio do seu dispositivo?",
+    reservationBooked = "Reserva realizada!",
+    notificationsTitle = "Notifica��es",
+    notifyBeforeLabel = "Avisar-me antes de:",
+    reminderTitle = "Lembrete de Reserva",
+    reminderBody = "%1${"$"}s: %2${"$"}s � %3${"$"}s"
 )
 
 val StringsRu = AppStrings(
@@ -417,10 +459,30 @@ val StringsRu = AppStrings(
     machineOccupiedSchedule = "Тренажёр уже занят в это время",
     userReservationConflict = "У вас уже есть бронь на это время",
 
+    contentDescRefresh = "Обновить",
+    contentDescDelete = "Удалить",
+    contentDescAdd = "Добавить",
+    contentDescBack = "Назад",
+    contentDescNext = "Далее",
+    contentDescSettings = "Настройки",
+    contentDescApprove = "Одобрить",
+    contentDescReject = "Отклонить",
     theme = "Тема",
     language = "Язык",
     selectLanguage = "Выбрать язык",
-    close = "Закрыть"
+    close = "Закрыть",
+
+    expiresToday = "Истекает сегодня!",
+    daysLeft = "дней осталось",
+    dateFromTo = "С %s по %s",
+    filterPast = "Прошедшие",
+    addToCalendar = "Добавить в календарь",
+    addToCalendarMessage = "Вы хотите добавить это событие в календарь?",
+    reservationBooked = "Забронировано!",
+    notificationsTitle = "Уведомления",
+    notifyBeforeLabel = "Уведомить за:",
+    reminderTitle = "Напоминание о бронировании",
+    reminderBody = "%1\$s: %2\$s - %3\$s"
 )
 
 val StringsZh = AppStrings(
@@ -558,8 +620,28 @@ val StringsZh = AppStrings(
     machineOccupiedSchedule = "该设备在该时段已被占用",
     userReservationConflict = "你在该时段已有一个预约",
 
+    contentDescRefresh = "刷新",
+    contentDescDelete = "删除",
+    contentDescAdd = "添加",
+    contentDescBack = "返回",
+    contentDescNext = "下一个",
+    contentDescSettings = "设置",
+    contentDescApprove = "批准",
+    contentDescReject = "拒绝",
     theme = "主题",
     language = "语言",
     selectLanguage = "选择语言",
-    close = "关闭"
+    close = "关闭",
+
+    expiresToday = "今天到期！",
+    daysLeft = "剩余天数",
+    dateFromTo = "从 %s 到 %s",
+    filterPast = "已过期",
+    addToCalendar = "添加到日历",
+    addToCalendarMessage = "您想将此预订添加到日历中吗？",
+    reservationBooked = "已预订！",
+    notificationsTitle = "通知",
+    notifyBeforeLabel = "提前通知：",
+    reminderTitle = "预订提醒",
+    reminderBody = "%1\$s: %2\$s - %3\$s"
 )

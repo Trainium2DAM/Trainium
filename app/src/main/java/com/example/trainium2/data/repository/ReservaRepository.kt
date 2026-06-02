@@ -54,8 +54,10 @@ class ReservaRepository {
             }.decodeList<ReservaConDetalles>()
     }
 
-    suspend fun insert(reserva: Reserva) = withContext(Dispatchers.IO) {
-        SupabaseClient.client.from(DbTables.RESERVAS).insert(reserva)
+    suspend fun insert(reserva: Reserva): Reserva? = withContext(Dispatchers.IO) {
+        SupabaseClient.client.from(DbTables.RESERVAS)
+            .insert(reserva) { select() }
+            .decodeSingleOrNull<Reserva>()
     }
 
     suspend fun delete(id: Int) = withContext(Dispatchers.IO) {

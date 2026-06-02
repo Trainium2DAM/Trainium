@@ -15,9 +15,13 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.semantics.heading
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.example.trainium2.data.i18n.AppStrings
 
 @Composable
 fun ScreenHeader(
@@ -30,14 +34,17 @@ fun ScreenHeader(
     subtitleColor: Color,
     onToggleTheme: (() -> Unit)? = null,
     darkTheme: Boolean? = null,
-    onToggleLanguage: (() -> Unit)? = null
+    onToggleLanguage: (() -> Unit)? = null,
+    strings: AppStrings? = null
 ) {
     val headerAlpha by animateFloatAsState(if (visible) 1f else 0f, tween(500), label = "h")
+    val density = LocalDensity.current
+    val statusBarHeight = with(density) { WindowInsets.statusBars.getTop(density).toDp() }
 
+    Spacer(Modifier.height(statusBarHeight))
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .statusBarsPadding()
             .alpha(headerAlpha),
         verticalAlignment = Alignment.CenterVertically
     ) {
@@ -45,21 +52,21 @@ fun ScreenHeader(
             TextButton(onClick = onBack) {
                 Icon(
                     Icons.AutoMirrored.Filled.ArrowBack,
-                    contentDescription = null,
+                    contentDescription = strings?.contentDescBack,
                     tint = BlueAccent,
                     modifier = Modifier.size(18.dp)
                 )
             }
         }
         Column(Modifier.weight(1f)) {
-            Text(title, fontSize = 22.sp, fontWeight = FontWeight.Bold, color = textColor)
+            Text(title, fontSize = 22.sp, fontWeight = FontWeight.Bold, color = textColor, modifier = Modifier.semantics { heading() })
             Text(subtitle, fontSize = 12.sp, color = subtitleColor)
         }
         if (onToggleLanguage != null) {
             IconButton(onClick = onToggleLanguage) {
                 Icon(
                     Icons.Default.Language,
-                    contentDescription = null,
+                    contentDescription = strings?.language,
                     tint = BlueAccent,
                     modifier = Modifier.size(22.dp)
                 )
@@ -69,7 +76,7 @@ fun ScreenHeader(
             IconButton(onClick = onToggleTheme) {
                 Icon(
                     if (darkTheme) Icons.Default.LightMode else Icons.Default.DarkMode,
-                    contentDescription = null,
+                    contentDescription = strings?.theme,
                     tint = BlueAccent
                 )
             }

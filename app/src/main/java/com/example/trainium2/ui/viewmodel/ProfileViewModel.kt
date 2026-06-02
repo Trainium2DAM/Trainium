@@ -12,6 +12,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import java.util.Date
+import java.util.concurrent.TimeUnit
 
 private var avisoMostrado = false
 
@@ -19,6 +20,7 @@ class ProfileViewModel : ViewModel() {
     var usuario by mutableStateOf<Usuario?>(null)
     var avisoMantenimiento by mutableStateOf<String?>(null)
     var isLoading by mutableStateOf(false)
+    var diasRestantes by mutableStateOf(-1)
 
     fun loadProfile(idUsuario: Int) {
         viewModelScope.launch {
@@ -28,6 +30,12 @@ class ProfileViewModel : ViewModel() {
                     ServiceLocator.usuarioRepository.getUserById(idUsuario)
                 }
                 usuario = user
+
+                diasRestantes = user?.fechaFin?.let { fin ->
+                    val hoy = AppConfig.FORMAT_ISO_DATE.parse(AppConfig.FORMAT_ISO_DATE.format(Date()))!!
+                    val finDate = AppConfig.FORMAT_ISO_DATE.parse(fin) ?: return@let -1
+                    TimeUnit.MILLISECONDS.toDays(finDate.time - hoy.time).toInt()
+                } ?: -1
 
                 if (!avisoMostrado) {
                     val hoy = AppConfig.FORMAT_ISO_DATE.format(Date())

@@ -31,6 +31,9 @@ class MaquinasViewModel : ViewModel() {
     var reservasDelUsuario by mutableStateOf<List<Reserva>>(emptyList())
     var errorMessage by mutableStateOf<String?>(null)
 
+    // Snackbar state: set to the created Reserva when booking succeeds
+    var reservaExitosa by mutableStateOf<Reserva?>(null)
+
     fun loadMachines() {
         viewModelScope.launch {
             isLoading = true
@@ -131,9 +134,10 @@ class MaquinasViewModel : ViewModel() {
             errorMessage = null
             try {
                 val reserva = Reserva(idUsuario = userId, idMaquina = machineId, fecha = date, horaInicio = horaInicio, horaFin = horaFin)
-                withContext(Dispatchers.IO) {
+                val created = withContext(Dispatchers.IO) {
                     ServiceLocator.reservaRepository.insert(reserva)
                 }
+                reservaExitosa = created ?: reserva
                 maquinaParaReservar = null
             } catch (e: Exception) {
                 errorMessage = "Error: ${e.message}"
@@ -143,5 +147,18 @@ class MaquinasViewModel : ViewModel() {
         }
     }
 
+    fun cancelUltimaReserva() {
+        val reservaId = reservaExitosa?.id ?: return
+        viewModelScope.launch {
+            try {
+                withContext(Dispatchers.IO) {
+                    ServiceLocator.reservaRepository.delete(reservaId)
+                }
+            } catch (_: Exception) {}
+        }
+        reservaExitosa = null
+    }
+
+    fun clearReservaExitosa() { reservaExitosa = null }
     fun clearError() { errorMessage = null }
 }

@@ -20,6 +20,9 @@ import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.semantics.LiveRegionMode
+import androidx.compose.ui.semantics.liveRegion
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -27,8 +30,10 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.trainium2.models.Pago
 import com.example.trainium2.data.i18n.LocalStrings
 import com.example.trainium2.ui.theme.*
+import com.example.trainium2.AppConfig
 import com.example.trainium2.ui.viewmodel.HistorialViewModel
 import kotlinx.coroutines.delay
+import java.util.Calendar
 
 @Composable
 fun HistorialScreen(userId: Int, darkTheme: Boolean, onToggleTheme: () -> Unit, onToggleLanguage: () -> Unit, onBack: () -> Unit) {
@@ -48,6 +53,20 @@ fun HistorialScreen(userId: Int, darkTheme: Boolean, onToggleTheme: () -> Unit, 
 
     LaunchedEffect(Unit) { delay(100); visible = true; viewModel.loadPagos(userId) }
 
+    val mesesPorTipo = mapOf(
+        "Mensual" to 1, "Monthly" to 1,
+        "Semestral" to 6, "Semiannual" to 6,
+        "Anual" to 12, "Annual" to 12, "Yearly" to 12
+    )
+
+    fun calcularFinSuscripcion(inicio: String, tipo: String): String? {
+        val meses = mesesPorTipo.entries.firstOrNull { tipo.contains(it.key, ignoreCase = true) }?.value ?: return null
+        val cal = Calendar.getInstance()
+        AppConfig.FORMAT_ISO_DATE.parse(inicio)?.let { cal.time = it } ?: return null
+        cal.add(Calendar.MONTH, meses)
+        return AppConfig.FORMAT_ISO_DATE.format(cal.time)
+    }
+
     Box(Modifier.fillMaxSize().background(bgBrush)) {
         Column(Modifier.fillMaxSize().padding(horizontal = 20.dp)) {
             ScreenHeader(
@@ -56,14 +75,15 @@ fun HistorialScreen(userId: Int, darkTheme: Boolean, onToggleTheme: () -> Unit, 
                 onBack = onBack,
                 trailing = {
                     IconButton(onClick = { viewModel.loadPagos(userId) }) {
-                        Icon(Icons.Default.Refresh, null, tint = BlueAccent)
+                        Icon(Icons.Default.Refresh, contentDescription = strings.contentDescRefresh, tint = BlueAccent)
                     }
                 },
                 textColor = textColor,
                 subtitleColor = subtitleColor,
                 onToggleTheme = onToggleTheme,
                 darkTheme = darkTheme,
-                onToggleLanguage = onToggleLanguage
+                onToggleLanguage = onToggleLanguage,
+                strings = strings
             )
             Spacer(Modifier.height(30.dp))
 
@@ -79,7 +99,7 @@ fun HistorialScreen(userId: Int, darkTheme: Boolean, onToggleTheme: () -> Unit, 
                 }
             } else if (viewModel.error != null || viewModel.pagos.isEmpty()) {
                 Column(Modifier.fillMaxSize(), verticalArrangement = Arrangement.Center, horizontalAlignment = Alignment.CenterHorizontally) {
-                    Text(if (viewModel.error != null) strings.connectionError else strings.noPayments, color = textColor.copy(0.6f))
+                    Text(if (viewModel.error != null) strings.connectionError else strings.noPayments, color = textColor.copy(0.6f), modifier = Modifier.semantics { liveRegion = LiveRegionMode.Polite })
                     Spacer(Modifier.height(16.dp))
                     Button(onClick = { viewModel.loadPagos(userId) }, colors = ButtonDefaults.buttonColors(containerColor = BlueAccent.copy(0.1f))) {
                         Text(strings.retry, color = BlueAccent)
@@ -100,12 +120,14 @@ fun HistorialScreen(userId: Int, darkTheme: Boolean, onToggleTheme: () -> Unit, 
                             Row(Modifier.padding(20.dp), verticalAlignment = Alignment.CenterVertically) {
                                 Box(Modifier.size(40.dp).background(BlueAccent.copy(0.1f), CircleShape), contentAlignment = Alignment.Center) {
                                     val isCard = pago.metodoPago.contains("Tarj", ignoreCase = true) || pago.metodoPago.contains(strings.creditCard.take(4), ignoreCase = true)
-                                    Icon(if (isCard) Icons.Default.CreditCard else Icons.Default.Payments, null, tint = BlueAccent, modifier = Modifier.size(22.dp))
+                                    Icon(if (isCard) Icons.Default.CreditCard else Icons.Default.Payments, contentDescription = strings.paymentMethod, tint = BlueAccent, modifier = Modifier.size(22.dp))
                                 }
                                 Spacer(Modifier.width(16.dp))
                                 Column(Modifier.weight(1f)) {
                                     Text(pago.tipo, fontWeight = FontWeight.Bold, color = textColor)
-                                    Text(pago.fechaPago, fontSize = 11.sp, color = subtitleColor)
+                                    val finPago = calcularFinSuscripcion(pago.fechaPago, pago.tipo)
+                                    val rango = if (finPago != null) strings.dateFromTo.format(pago.fechaPago, finPago) else pago.fechaPago
+                                    Text(rango, fontSize = 11.sp, color = subtitleColor)
                                 }
                                 Text("${pago.monto}€", fontWeight = FontWeight.ExtraBold, color = BlueAccent, fontSize = 18.sp)
                             }

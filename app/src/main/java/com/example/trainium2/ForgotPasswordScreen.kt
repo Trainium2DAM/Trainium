@@ -84,19 +84,18 @@ fun ForgotPasswordScreen(isDarkTheme: Boolean, onToggleTheme: () -> Unit, onTogg
                 subtitleColor = subtitleColor,
                 onToggleTheme = onToggleTheme,
                 darkTheme = isDarkTheme,
-                onToggleLanguage = onToggleLanguage
+                onToggleLanguage = onToggleLanguage,
+                strings = strings
             )
             Spacer(Modifier.height(30.dp))
 
-            // ── Lock Icon ──
             Box(Modifier.fillMaxWidth().alpha(iconAlpha).scale(iconScale), contentAlignment = Alignment.Center) {
                 Box(Modifier.size(80.dp).background(BlueAccent.copy(0.1f), androidx.compose.foundation.shape.CircleShape), contentAlignment = Alignment.Center) {
-                    Icon(if (viewModel.step == 1) Icons.Default.Lock else Icons.Default.LockOpen, null, tint = BlueAccent, modifier = Modifier.size(40.dp))
+                    Icon(if (viewModel.step == 1) Icons.Default.Lock else Icons.Default.LockOpen, contentDescription = if (viewModel.step == 1) strings.password else strings.newPassword, tint = BlueAccent, modifier = Modifier.size(40.dp))
                 }
             }
             Spacer(Modifier.height(30.dp))
 
-            // ── Form Card ──
             Card(
                 modifier = Modifier.fillMaxWidth().alpha(formAlpha)
                     .shadow(8.dp, RoundedCornerShape(20.dp), ambientColor = BlueAccent.copy(0.05f), spotColor = BlueAccent.copy(0.05f)),
@@ -122,7 +121,6 @@ fun ForgotPasswordScreen(isDarkTheme: Boolean, onToggleTheme: () -> Unit, onTogg
 
             Spacer(Modifier.height(22.dp))
 
-            // ── Action Button ──
             Button(
                 onClick = {
                     if (viewModel.step == 1) {
@@ -143,7 +141,6 @@ fun ForgotPasswordScreen(isDarkTheme: Boolean, onToggleTheme: () -> Unit, onTogg
                 }
             }
 
-            // ── Step Indicator ──
             Spacer(Modifier.height(24.dp))
             Row(Modifier.fillMaxWidth().alpha(formAlpha), horizontalArrangement = Arrangement.Center) {
                 Box(Modifier.size(if (viewModel.step == 1) 10.dp else 8.dp).background(if (viewModel.step == 1) BlueAccent else textColor.copy(0.2f), CircleShape))

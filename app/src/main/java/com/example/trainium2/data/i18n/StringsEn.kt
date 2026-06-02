@@ -135,8 +135,29 @@ val StringsEn = AppStrings(
     machineOccupiedSchedule = "The machine is already occupied at that time",
     userReservationConflict = "You already have a reservation at that time",
 
+    contentDescRefresh = "Refresh",
+    contentDescDelete = "Delete",
+    contentDescAdd = "Add",
+    contentDescBack = "Back",
+    contentDescNext = "Next",
+    contentDescSettings = "Settings",
+    contentDescApprove = "Approve",
+    contentDescReject = "Reject",
     theme = "Theme",
     language = "Language",
     selectLanguage = "Select language",
-    close = "Close"
+    close = "Close",
+
+    expiresToday = "Expires today!",
+    daysLeft = "days left",
+    dateFromTo = "From %s to %s",
+
+    filterPast = "Past",
+    addToCalendar = "Add to calendar",
+    addToCalendarMessage = "Do you want to add this event to your device calendar?",
+    reservationBooked = "Reservation made!",
+    notificationsTitle = "Notifications",
+    notifyBeforeLabel = "Notify me before:",
+    reminderTitle = "Reservation Reminder",
+    reminderBody = "%1\$s: %2\$s – %3\$s"
 )

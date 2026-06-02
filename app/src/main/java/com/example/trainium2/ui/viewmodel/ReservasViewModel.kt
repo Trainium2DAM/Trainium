@@ -11,7 +11,9 @@ import com.example.trainium2.models.ReservaConDetalles
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import java.text.SimpleDateFormat
 import java.util.Date
+import java.util.Locale
 
 class ReservasViewModel : ViewModel() {
     var todasLasReservas by mutableStateOf<List<ReservaConDetalles>>(emptyList())
@@ -56,13 +58,27 @@ class ReservasViewModel : ViewModel() {
         fechaFiltroManual = date
     }
 
+    private fun isPast(r: ReservaConDetalles): Boolean {
+        return try {
+            val fmt = SimpleDateFormat("yyyy-MM-dd HH:mm", Locale.getDefault())
+            val horaFin5 = r.horaFin.take(5)
+            val reservaEnd = fmt.parse("${r.fecha} $horaFin5") ?: return false
+            reservaEnd.before(Date())
+        } catch (_: Exception) {
+            false
+        }
+    }
+
     fun getFilteredReservations(): List<ReservaConDetalles> {
         val hoy = AppConfig.FORMAT_ISO_DATE.format(Date())
         return when (filtroSeleccionado) {
-            "today" -> todasLasReservas.filter { it.fecha == hoy }
-            "upcoming" -> todasLasReservas.filter { it.fecha >= hoy }
-            "date" -> todasLasReservas.filter { it.fecha == fechaFiltroManual }
-            else -> todasLasReservas
+            "today"    -> todasLasReservas.filter { it.fecha == hoy }
+            "upcoming" -> todasLasReservas.filter { !isPast(it) }
+            "past"     -> todasLasReservas.filter { isPast(it) }
+            "date"     -> todasLasReservas.filter { it.fecha == fechaFiltroManual }
+            else       -> todasLasReservas
         }.sortedWith(compareBy({ it.fecha }, { it.horaInicio }))
     }
+
+    fun isPastReservation(r: ReservaConDetalles): Boolean = isPast(r)
 }

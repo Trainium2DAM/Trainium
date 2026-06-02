@@ -135,8 +135,28 @@ val StringsVal = AppStrings(
     machineOccupiedSchedule = "La màquina ja està ocupada en aquest horari",
     userReservationConflict = "Ja tens una reserva en aquest horari",
 
+    contentDescRefresh = "Actualitzar",
+    contentDescDelete = "Eliminar",
+    contentDescAdd = "Afegir",
+    contentDescBack = "Tornar",
+    contentDescNext = "Següent",
+    contentDescSettings = "Ajustos",
+    contentDescApprove = "Aprovar",
+    contentDescReject = "Rebutjar",
     theme = "Tema",
     language = "Idioma",
     selectLanguage = "Seleccionar idioma",
-    close = "Tancar"
+    close = "Tancar",
+    expiresToday = "Venç hui!",
+    daysLeft = "dies restants",
+    dateFromTo = "Des de %s fins a %s",
+
+    filterPast = "Passades",
+    addToCalendar = "Afegir al calendari",
+    addToCalendarMessage = "Vols afegir este event al calendari del dispositiu?",
+    reservationBooked = "Reserva realitzada!",
+    notificationsTitle = "Notificacions",
+    notifyBeforeLabel = "Avisar-me amb antelaci� de:",
+    reminderTitle = "Recordatori de Reserva",
+    reminderBody = "%1\$s: %2\$s – %3\$s"
 )

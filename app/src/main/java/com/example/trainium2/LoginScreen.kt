@@ -12,6 +12,8 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.scale
+import androidx.compose.ui.semantics.heading
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
@@ -22,7 +24,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Badge
 import androidx.compose.material.icons.filled.Lock
-import androidx.compose.material.icons.filled.Login
+import androidx.compose.material.icons.automirrored.filled.Login
 import androidx.compose.material.icons.filled.DarkMode
 import androidx.compose.material.icons.filled.Language
 import androidx.compose.material.icons.filled.LightMode
@@ -103,26 +105,27 @@ fun LoginScreen(
     Box(modifier = Modifier.fillMaxSize()) {
         Box(Modifier.fillMaxSize().background(bgOverlay))
 
-        Row(
-            modifier = Modifier
-                .align(Alignment.TopEnd)
-                .statusBarsPadding()
-                .padding(end = 8.dp, top = 4.dp),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            IconButton(onClick = onToggleLanguage) {
-                Icon(Icons.Default.Language, contentDescription = strings.language, tint = BlueAccent, modifier = Modifier.size(24.dp))
-            }
-            IconButton(onClick = onToggleTheme) {
-                Icon(if (isDarkTheme) Icons.Default.LightMode else Icons.Default.DarkMode, contentDescription = strings.theme, tint = BlueAccent, modifier = Modifier.size(26.dp))
-            }
-        }
+        Column(modifier = Modifier.fillMaxSize()) {
+            Spacer(Modifier.windowInsetsTopHeight(WindowInsets.statusBars))
 
-        Column(
-            modifier = Modifier.fillMaxSize().padding(28.dp),
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.Center
-        ) {
+            Row(
+                modifier = Modifier.fillMaxWidth().padding(end = 8.dp),
+                horizontalArrangement = Arrangement.End,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                IconButton(onClick = onToggleLanguage) {
+                    Icon(Icons.Default.Language, contentDescription = strings.language, tint = BlueAccent, modifier = Modifier.size(24.dp))
+                }
+                IconButton(onClick = onToggleTheme) {
+                    Icon(if (isDarkTheme) Icons.Default.LightMode else Icons.Default.DarkMode, contentDescription = strings.theme, tint = BlueAccent, modifier = Modifier.size(26.dp))
+                }
+            }
+
+            Column(
+                modifier = Modifier.fillMaxWidth().weight(1f).padding(28.dp),
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.Center
+            ) {
             Box(contentAlignment = Alignment.Center, modifier = Modifier.alpha(logoAlpha).scale(logoScale)) {
                 Image(
                     painter = painterResource(if (isDarkTheme) R.drawable.blanco else R.drawable.negro),
@@ -133,7 +136,7 @@ fun LoginScreen(
 
             Spacer(Modifier.height(16.dp))
 
-            Text(strings.loginTitle, fontSize = 26.sp, fontWeight = FontWeight.Black, color = textColor, letterSpacing = 4.sp, modifier = Modifier.alpha(titleAlpha))
+            Text(strings.loginTitle, fontSize = 26.sp, fontWeight = FontWeight.Black, color = textColor, letterSpacing = 4.sp, modifier = Modifier.semantics { heading() }.alpha(titleAlpha))
             Text(strings.loginWelcome, fontSize = 13.sp, color = subtitleColor, modifier = Modifier.alpha(titleAlpha))
 
             Spacer(Modifier.height(28.dp))
@@ -175,7 +178,7 @@ fun LoginScreen(
             ) {
                 Box(Modifier.fillMaxSize().background(Brush.horizontalGradient(listOf(BlueAccent, BlueElectric)), RoundedCornerShape(16.dp)), contentAlignment = Alignment.Center) {
                     Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.Center) {
-                        Icon(Icons.Default.Login, null, tint = Color.White, modifier = Modifier.size(18.dp))
+                        Icon(Icons.AutoMirrored.Filled.Login, contentDescription = strings.enter, tint = Color.White, modifier = Modifier.size(18.dp))
                         Spacer(Modifier.width(8.dp))
                         Text(strings.enter, fontSize = 16.sp, fontWeight = FontWeight.Bold, color = Color.White, letterSpacing = 2.sp)
                     }
@@ -201,4 +204,5 @@ fun LoginScreen(
             }
         }
     }
+}
 }

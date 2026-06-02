@@ -135,8 +135,29 @@ val StringsFr = AppStrings(
     machineOccupiedSchedule = "La machine est déjà occupée à cette heure",
     userReservationConflict = "Vous avez déjà une réservation à cette heure",
 
+    contentDescRefresh = "Actualiser",
+    contentDescDelete = "Supprimer",
+    contentDescAdd = "Ajouter",
+    contentDescBack = "Retour",
+    contentDescNext = "Suivant",
+    contentDescSettings = "Paramètres",
+    contentDescApprove = "Approuver",
+    contentDescReject = "Rejeter",
     theme = "Thème",
     language = "Langue",
     selectLanguage = "Sélectionner la langue",
-    close = "Fermer"
+    close = "Fermer",
+
+    expiresToday = "Expire aujourd'hui !",
+    daysLeft = "jours restants",
+    dateFromTo = "Du %s au %s",
+
+    filterPast = "Pass�es",
+    addToCalendar = "Ajouter au calendrier",
+    addToCalendarMessage = "Souhaitez-vous ajouter cet �v�nement au calendrier de votre appareil ?",
+    reservationBooked = "R�servation effectu�e !",
+    notificationsTitle = "Notifications",
+    notifyBeforeLabel = "Me pr�venir avant :",
+    reminderTitle = "Rappel de R�servation",
+    reminderBody = "%1\$s: %2\$s – %3\$s"
 )

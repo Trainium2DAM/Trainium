@@ -13,6 +13,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
+import androidx.compose.material.icons.automirrored.filled.Logout
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -26,11 +27,14 @@ import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.semantics.heading
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.example.trainium2.data.i18n.AppStrings
 import com.example.trainium2.data.i18n.LocalStrings
 import com.example.trainium2.ui.theme.*
 import com.example.trainium2.ui.viewmodel.ProfileViewModel
@@ -76,12 +80,14 @@ fun ProfileScreen(
     val topIconTint = if (darkTheme) BlueSoft else BlueAccent
 
     Box(Modifier.fillMaxSize().background(bgBrush)) {
+        Column(modifier = Modifier.fillMaxSize()) {
+            Spacer(Modifier.windowInsetsTopHeight(WindowInsets.statusBars))
         if (viewModel.isLoading) {
             Column(
-                modifier = Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(horizontal = 24.dp, vertical = 16.dp),
+                modifier = Modifier.fillMaxWidth().weight(1f).verticalScroll(rememberScrollState()).padding(horizontal = 24.dp, vertical = 16.dp),
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
-                Row(Modifier.fillMaxWidth().statusBarsPadding(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
+                Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         SkeletonCircle(size = 32)
                         Spacer(Modifier.width(4.dp))
@@ -106,20 +112,20 @@ fun ProfileScreen(
             }
         } else {
             Column(
-                modifier = Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(horizontal = 24.dp, vertical = 16.dp),
+                modifier = Modifier.fillMaxWidth().weight(1f).verticalScroll(rememberScrollState()).padding(horizontal = 24.dp, vertical = 16.dp),
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
-                Row(modifier = Modifier.fillMaxWidth().statusBarsPadding(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
+                Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         IconButton(onClick = onToggleLanguage) {
                             Icon(Icons.Default.Language, contentDescription = strings.language, tint = topIconTint, modifier = Modifier.size(22.dp))
                         }
                         IconButton(onClick = onToggleTheme) {
-                            Icon(if (darkTheme) Icons.Default.LightMode else Icons.Default.DarkMode, null, tint = topIconTint)
+                            Icon(if (darkTheme) Icons.Default.LightMode else Icons.Default.DarkMode, strings.theme, tint = topIconTint)
                         }
                         Spacer(Modifier.width(4.dp))
                         IconButton(onClick = onNavigateToEditProfile) {
-                            Icon(Icons.Default.Settings, contentDescription = null, tint = topIconTint, modifier = Modifier.size(24.dp))
+                            Icon(Icons.Default.Settings, contentDescription = strings.contentDescSettings, tint = topIconTint, modifier = Modifier.size(24.dp))
                         }
                     }
                     Image(painter = painterResource(if (darkTheme) R.drawable.blanco else R.drawable.negro), contentDescription = "Trainium", modifier = Modifier.height(56.dp))
@@ -148,7 +154,7 @@ fun ProfileScreen(
                         }
                     }
                     Spacer(Modifier.height(18.dp))
-                    Text(text = "${strings.hello}, ${viewModel.usuario?.nombre ?: ""}!", fontSize = 28.sp, fontWeight = FontWeight.Bold, color = titleColor, textAlign = TextAlign.Center)
+                    Text(text = "${strings.hello}, ${viewModel.usuario?.nombre ?: ""}!", fontSize = 28.sp, fontWeight = FontWeight.Bold, color = titleColor, textAlign = TextAlign.Center, modifier = Modifier.semantics { heading() })
                     if (viewModel.usuario?.admin == 1) {
                         Spacer(Modifier.height(6.dp))
                         Card(shape = RoundedCornerShape(20.dp), colors = CardDefaults.cardColors(containerColor = BlueAccent.copy(0.15f))) {
@@ -158,16 +164,25 @@ fun ProfileScreen(
                     if (viewModel.usuario?.premium == true || isPremium) {
                         Spacer(Modifier.height(4.dp))
                         Text(strings.premium, fontSize = 13.sp, color = Color(0xFFFFD700), fontWeight = FontWeight.Bold, letterSpacing = 2.sp)
+                        val dias = viewModel.diasRestantes
+                        if (dias >= 0) {
+                            Spacer(Modifier.height(2.dp))
+                            val diasText = if (dias == 0) strings.expiresToday else "$dias ${strings.daysLeft}"
+                            Text(diasText, fontSize = 12.sp, color = if (dias <= 7) Color(0xFFFF6B6B) else Color(0xFFFFD700).copy(0.7f), fontWeight = FontWeight.SemiBold)
+                        }
                     }
                 }
 
                 Spacer(Modifier.height(36.dp))
 
                 Column(modifier = Modifier.alpha(buttonsAlpha), verticalArrangement = Arrangement.spacedBy(14.dp), horizontalAlignment = Alignment.CenterHorizontally) {
-                    ProfileMenuCard(strings.machines, Icons.Default.FitnessCenter, strings.reservations, cardBg, cardIconBg, titleColor, subtitleColor, darkTheme) { onNavigateToMaquinas() }
-                    ProfileMenuCard(strings.reservations, Icons.Default.CalendarMonth, strings.machines, cardBg, cardIconBg, titleColor, subtitleColor, darkTheme) { onNavigateToReservas() }
-                    ProfileMenuCard(strings.dishes, Icons.Default.Restaurant, strings.dishes, cardBg, cardIconBg, titleColor, subtitleColor, darkTheme) { onNavigateToPlatos() }
-                    ProfileMenuCard(strings.weightRecord, Icons.Default.MonitorWeight, strings.history, cardBg, cardIconBg, titleColor, subtitleColor, darkTheme) { onNavigateToRegistroPeso() }
+                    ProfileMenuCard(strings.machines, Icons.Default.FitnessCenter, strings.reservations, cardBg, cardIconBg, titleColor, subtitleColor, darkTheme, strings) { onNavigateToMaquinas() }
+
+                    ProfileMenuCard(strings.reservations, Icons.Default.CalendarMonth, strings.machines, cardBg, cardIconBg, titleColor, subtitleColor, darkTheme, strings) { onNavigateToReservas() }
+
+                    ProfileMenuCard(strings.dishes, Icons.Default.Restaurant, strings.dishes, cardBg, cardIconBg, titleColor, subtitleColor, darkTheme, strings) { onNavigateToPlatos() }
+
+                    ProfileMenuCard(strings.weightRecord, Icons.Default.MonitorWeight, strings.history, cardBg, cardIconBg, titleColor, subtitleColor, darkTheme, strings) { onNavigateToRegistroPeso() }
                 }
 
                 Spacer(Modifier.height(32.dp))
@@ -180,7 +195,7 @@ fun ProfileScreen(
                         contentColor = Color(0xFFFF6B6B)
                     )
                 ) {
-                    Icon(Icons.Default.Logout, null, tint = Color(0xFFFF6B6B), modifier = Modifier.size(20.dp))
+                    Icon(Icons.AutoMirrored.Filled.Logout, contentDescription = strings.logout, tint = Color(0xFFFF6B6B), modifier = Modifier.size(20.dp))
                     Spacer(Modifier.width(8.dp))
                     Text(strings.logout, color = Color(0xFFFF6B6B), fontWeight = FontWeight.SemiBold, fontSize = 15.sp)
                 }
@@ -188,6 +203,7 @@ fun ProfileScreen(
             }
         }
     }
+}
 
     if (viewModel.avisoMantenimiento != null) {
         val cardBg2 = if (darkTheme) Color(0xFF162347) else Color.White
@@ -207,18 +223,18 @@ fun ProfileScreen(
 }
 
 @Composable
-private fun ProfileMenuCard(text: String, icon: ImageVector, subtitle: String, cardBg: Color, iconBg: Color, titleColor: Color, subtitleColor: Color, isDark: Boolean, onClick: () -> Unit) {
+private fun ProfileMenuCard(text: String, icon: ImageVector, subtitle: String, cardBg: Color, iconBg: Color, titleColor: Color, subtitleColor: Color, isDark: Boolean, strings: AppStrings, onClick: () -> Unit) {
     Card(onClick = onClick, modifier = Modifier.fillMaxWidth().shadow(if (isDark) 8.dp else 4.dp, RoundedCornerShape(18.dp)), shape = RoundedCornerShape(18.dp), colors = CardDefaults.cardColors(containerColor = cardBg)) {
         Row(Modifier.fillMaxWidth().padding(horizontal = 20.dp, vertical = 18.dp), verticalAlignment = Alignment.CenterVertically) {
             Box(Modifier.size(48.dp).background(iconBg, RoundedCornerShape(14.dp)), contentAlignment = Alignment.Center) {
-                Icon(icon, null, tint = BlueAccent, modifier = Modifier.size(26.dp))
+                Icon(icon, contentDescription = text, tint = BlueAccent, modifier = Modifier.size(26.dp))
             }
             Spacer(Modifier.width(16.dp))
             Column(Modifier.weight(1f)) {
                 Text(text, fontSize = 16.sp, fontWeight = FontWeight.Bold, color = titleColor)
                 Text(subtitle, fontSize = 12.sp, color = subtitleColor)
             }
-            Icon(Icons.Default.ChevronRight, null, tint = BlueAccent.copy(0.5f), modifier = Modifier.size(24.dp))
+            Icon(Icons.Default.ChevronRight, contentDescription = strings.contentDescNext, tint = BlueAccent.copy(0.5f), modifier = Modifier.size(24.dp))
         }
     }
 }

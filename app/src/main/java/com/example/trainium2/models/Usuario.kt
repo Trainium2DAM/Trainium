@@ -14,5 +14,9 @@ data class Usuario(
     val premium: Boolean,
     val email: String? = null,
     val telefono: String? = null,
-    val foto: String? = null // Nuevo campo para la imagen en Base64
+    val foto: String? = null,
+    @SerialName("fecha_ini_prem")
+    val fechaInicio: String? = null,
+    @SerialName("fecha_fin_prem")
+    val fechaFin: String? = null
 )

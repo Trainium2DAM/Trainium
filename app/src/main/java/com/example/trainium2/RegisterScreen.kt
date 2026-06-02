@@ -18,9 +18,11 @@ import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.semantics.heading
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Badge
 import androidx.compose.material.icons.filled.Lock
 import androidx.compose.material.icons.filled.Phone
@@ -161,35 +163,36 @@ fun RegisterScreen(isDarkTheme: Boolean, onToggleTheme: () -> Unit, onToggleLang
     }
 
     Box(Modifier.fillMaxSize().background(bgBrush)) {
-        Row(
-            modifier = Modifier
-                .align(Alignment.TopEnd)
-                .statusBarsPadding()
-                .padding(end = 8.dp, top = 4.dp),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            IconButton(onClick = onToggleLanguage) {
-                Icon(Icons.Default.Language, contentDescription = strings.language, tint = BlueAccent, modifier = Modifier.size(24.dp))
-            }
-            IconButton(onClick = onToggleTheme) {
-                Icon(if (isDarkTheme) Icons.Default.LightMode else Icons.Default.DarkMode, contentDescription = strings.theme, tint = BlueAccent, modifier = Modifier.size(26.dp))
-            }
-        }
+        Column(modifier = Modifier.fillMaxSize()) {
+            Spacer(Modifier.windowInsetsTopHeight(WindowInsets.statusBars))
 
-        Column(Modifier.fillMaxSize().padding(24.dp).verticalScroll(rememberScrollState()), horizontalAlignment = Alignment.CenterHorizontally) {
-            TextButton(onClick = onBack, Modifier.align(Alignment.Start).statusBarsPadding()) {
-                Icon(Icons.Default.ArrowBack, contentDescription = "Volver", tint = BlueAccent, modifier = Modifier.size(18.dp))
+            Row(
+                modifier = Modifier.fillMaxWidth().padding(end = 8.dp),
+                horizontalArrangement = Arrangement.End,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                IconButton(onClick = onToggleLanguage) {
+                    Icon(Icons.Default.Language, contentDescription = strings.language, tint = BlueAccent, modifier = Modifier.size(24.dp))
+                }
+                IconButton(onClick = onToggleTheme) {
+                    Icon(if (isDarkTheme) Icons.Default.LightMode else Icons.Default.DarkMode, contentDescription = strings.theme, tint = BlueAccent, modifier = Modifier.size(26.dp))
+                }
+            }
+
+            Column(Modifier.fillMaxWidth().weight(1f).padding(24.dp).verticalScroll(rememberScrollState()), horizontalAlignment = Alignment.CenterHorizontally) {
+            TextButton(onClick = onBack) {
+                Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = strings.contentDescBack, tint = BlueAccent, modifier = Modifier.size(18.dp))
             }
             Spacer(Modifier.height(8.dp))
 
             Box(contentAlignment = Alignment.Center, modifier = Modifier.alpha(iconAlpha).scale(iconScale)) {
                 Box(Modifier.size(80.dp).background(Color(0xFF00E676).copy(0.12f), CircleShape), contentAlignment = Alignment.Center) {
-                    Icon(Icons.Default.PersonAdd, null, tint = Color(0xFF00E676), modifier = Modifier.size(40.dp))
+                    Icon(Icons.Default.PersonAdd, contentDescription = strings.register, tint = Color(0xFF00E676), modifier = Modifier.size(40.dp))
                 }
             }
             Spacer(Modifier.height(10.dp))
 
-            Text(strings.registerTitle, fontSize = 26.sp, fontWeight = FontWeight.Bold, color = textColor, letterSpacing = 1.sp, modifier = Modifier.alpha(titleAlpha))
+            Text(strings.registerTitle, fontSize = 26.sp, fontWeight = FontWeight.Bold, color = textColor, letterSpacing = 1.sp, modifier = Modifier.semantics { heading() }.alpha(titleAlpha))
             Text(strings.registerSubtitle, fontSize = 13.sp, color = subtitleColor, modifier = Modifier.alpha(titleAlpha))
             Spacer(Modifier.height(22.dp))
 
@@ -226,7 +229,10 @@ fun RegisterScreen(isDarkTheme: Boolean, onToggleTheme: () -> Unit, onToggleLang
                                 trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = viewModel.prefijoDesplegado) },
                                 shape = RoundedCornerShape(14.dp),
                                 colors = inputColors,
-                                modifier = Modifier.menuAnchor()
+                                modifier = Modifier.menuAnchor(
+                                    type = MenuAnchorType.PrimaryNotEditable,
+                                    enabled = true
+                                )
                             )
                             ExposedDropdownMenu(
                                 expanded = viewModel.prefijoDesplegado,
@@ -281,4 +287,5 @@ fun RegisterScreen(isDarkTheme: Boolean, onToggleTheme: () -> Unit, onToggleLang
             Spacer(Modifier.height(16.dp))
         }
     }
+}
 }

@@ -22,6 +22,9 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
+import android.os.Build
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import com.example.trainium2.data.i18n.*
 import com.example.trainium2.models.SesionData
 import com.example.trainium2.ui.theme.Trainium2Theme
@@ -35,6 +38,21 @@ class MainActivity : ComponentActivity() {
             val context = LocalContext.current
             SecureSessionManager.setContext(context)
             val window = (context as? android.app.Activity)?.window
+
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                val launcher = rememberLauncherForActivityResult(
+                    contract = ActivityResultContracts.RequestPermission(),
+                    onResult = {}
+                )
+                LaunchedEffect(Unit) {
+                    NotificationHelper.createNotificationChannel(context)
+                    launcher.launch(android.Manifest.permission.POST_NOTIFICATIONS)
+                }
+            } else {
+                LaunchedEffect(Unit) {
+                    NotificationHelper.createNotificationChannel(context)
+                }
+            }
 
             val themeManager = remember { ThemeManager(context) }
             val languageManager = remember { LanguageManager(context) }
