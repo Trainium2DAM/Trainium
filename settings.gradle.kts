@@ -15,5 +15,5 @@ dependencyResolutionManagement {
     }
 }
 
-rootProject.name = "Trainium2"
+rootProject.name = "Trainium"
 include(":app")

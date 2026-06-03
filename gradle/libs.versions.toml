@@ -1,21 +1,21 @@
 [versions]
-agp = "8.13.2"
-kotlin = "2.0.21"
-coreKtx = "1.17.0"
+agp = "9.2.1"
+kotlin = "2.4.0"
+coreKtx = "1.19.0"
 junit = "4.13.2"
 junitVersion = "1.3.0"
 espressoCore = "3.7.0"
 lifecycleRuntimeKtx = "2.10.0"
-activityCompose = "1.12.4"
-composeBom = "2024.09.00"
-firebaseBom = "34.11.0"
+activityCompose = "1.13.0"
+composeBom = "2026.05.01"
+firebaseBom = "34.14.0"
 googleServices = "4.4.4"
-material = "1.12.0"
+material = "1.14.0"
 # Supabase Kotlin SDK
-supabase = "3.0.1"
+supabase = "3.6.0"
 # Ktor Engine
-ktor = "3.0.1"
-datastore = "1.1.1"
+ktor = "3.5.0"
+datastore = "1.2.1"
 
 [libraries]
 androidx-core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "coreKtx" }
