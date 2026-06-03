@@ -13,6 +13,8 @@ import kotlinx.coroutines.withContext
 class RegisterViewModel : ViewModel() {
     var nombre by mutableStateOf("")
     var dni by mutableStateOf("")
+    var tipoDocumento by mutableStateOf("DNI")
+    var tipoDocDesplegado by mutableStateOf(false)
     var email by mutableStateOf("")
     var pass by mutableStateOf("")
     var prefijo by mutableStateOf("+34")
@@ -22,11 +24,15 @@ class RegisterViewModel : ViewModel() {
     var errorMessage by mutableStateOf<String?>(null)
     var successMessage by mutableStateOf<String?>(null)
 
-    fun validateDni(): Boolean {
+    fun validateDocumento(): Boolean {
         val dniRegex = Regex("^[0-9]{8}[A-Z]$")
-        val nieRegex = Regex("^[XYZ][0-9]{7}[A-Z]$")
-        val extranjeroRegex = Regex("^[A-Z0-9]{5,20}$")
-        return dniRegex.matches(dni) || nieRegex.matches(dni) || extranjeroRegex.matches(dni)
+        val nieRegex = Regex("^[A-Z][0-9]{8}$")
+        val passportRegex = Regex("^[A-Z]{3}[0-9]{6}$")
+        return when (tipoDocumento) {
+            "DNI" -> dniRegex.matches(dni)
+            "NIE" -> nieRegex.matches(dni)
+            else -> passportRegex.matches(dni)
+        }
     }
 
     fun register(onBack: () -> Unit) {
@@ -39,8 +45,12 @@ class RegisterViewModel : ViewModel() {
                     errorMessage = "Todos los campos son obligatorios"
                     return@launch
                 }
-                if (!validateDni()) {
-                    errorMessage = "Formato de DNI/NIE inválido"
+                if (!validateDocumento()) {
+                    errorMessage = when (tipoDocumento) {
+                        "DNI" -> "Formato de DNI inválido (8 dígitos + letra, ej: 12345678A)"
+                        "NIE" -> "Formato de NIE inválido (letra + 8 dígitos, ej: A12345678)"
+                        else -> "Formato de pasaporte inválido (3 letras + 6 dígitos, ej: AAA000000)"
+                    }
                     return@launch
                 }
                 val digitos = numeroTelf.filter { it.isDigit() }
@@ -60,7 +70,7 @@ class RegisterViewModel : ViewModel() {
                     ServiceLocator.authRepository.insertUser(nombre, dni, email, pass, telefono)
                 }
                 successMessage = "Usuario registrado correctamente"
-                nombre = ""; dni = ""; email = ""; pass = ""; numeroTelf = ""
+                nombre = ""; dni = ""; tipoDocumento = "DNI"; email = ""; pass = ""; numeroTelf = ""
                 onBack()
             } catch (e: Exception) {
                 errorMessage = "Error: ${e.message}"

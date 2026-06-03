@@ -189,7 +189,10 @@ class MainActivity : ComponentActivity() {
                                     darkTheme = isDarkTheme,
                                     onToggleTheme = toggleTheme,
                                     onToggleLanguage = toggleLanguage,
-                                    onLogout = { navController.navigate("main") { popUpTo(0) } },
+                                    onLogout = {
+    SecureSessionManager.cerrarSesion()
+    navController.navigate("main") { popUpTo(0) }
+},
                                     onNavigateToMaquinas = { navController.navigate("maquinas/0/$idUsuario") },
                                     onNavigateToEditProfile = { navController.navigate("edit_profile/$idUsuario") },
                                     onNavigateToReservas = { navController.navigate("reservas/0/$idUsuario") },

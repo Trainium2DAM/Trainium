@@ -35,7 +35,6 @@ import androidx.compose.material.icons.filled.LightMode
 import androidx.compose.material3.Icon
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.foundation.text.KeyboardOptions
-import androidx.compose.material.icons.filled.Language
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -207,7 +206,64 @@ fun RegisterScreen(isDarkTheme: Boolean, onToggleTheme: () -> Unit, onToggleLang
                     Spacer(Modifier.height(14.dp))
                     OutlinedTextField(value = viewModel.nombre, onValueChange = { viewModel.nombre = it }, modifier = Modifier.fillMaxWidth(), label = { Text(strings.fullName) }, singleLine = true, shape = RoundedCornerShape(14.dp), colors = inputColors, leadingIcon = { Icon(Icons.Default.Person, null, tint = BlueAccent.copy(0.6f)) })
                     Spacer(Modifier.height(10.dp))
-                    OutlinedTextField(value = viewModel.dni, onValueChange = { viewModel.dni = it.uppercase() }, modifier = Modifier.fillMaxWidth(), label = { Text(strings.dniNie) }, singleLine = true, shape = RoundedCornerShape(14.dp), colors = inputColors, leadingIcon = { Icon(Icons.Default.Badge, null, tint = BlueAccent.copy(0.6f)) })
+                    Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        ExposedDropdownMenuBox(
+                            expanded = viewModel.tipoDocDesplegado,
+                            onExpandedChange = { viewModel.tipoDocDesplegado = it },
+                            modifier = Modifier.width(120.dp)
+                        ) {
+                            OutlinedTextField(
+                                value = viewModel.tipoDocumento,
+                                onValueChange = {},
+                                readOnly = true,
+                                singleLine = true,
+                                label = { Text(strings.docType) },
+                                trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = viewModel.tipoDocDesplegado) },
+                                shape = RoundedCornerShape(14.dp),
+                                colors = inputColors,
+                                modifier = Modifier.menuAnchor(
+                                    type = MenuAnchorType.PrimaryNotEditable,
+                                    enabled = true
+                                )
+                            )
+                            ExposedDropdownMenu(
+                                expanded = viewModel.tipoDocDesplegado,
+                                onDismissRequest = { viewModel.tipoDocDesplegado = false }
+                            ) {
+                                DropdownMenuItem(
+                                    text = { Text("DNI") },
+                                    onClick = {
+                                        viewModel.tipoDocumento = "DNI"
+                                        viewModel.tipoDocDesplegado = false
+                                    }
+                                )
+                                DropdownMenuItem(
+                                    text = { Text("NIE") },
+                                    onClick = {
+                                        viewModel.tipoDocumento = "NIE"
+                                        viewModel.tipoDocDesplegado = false
+                                    }
+                                )
+                                DropdownMenuItem(
+                                    text = { Text(strings.passportOption) },
+                                    onClick = {
+                                        viewModel.tipoDocumento = "PASAPORTE"
+                                        viewModel.tipoDocDesplegado = false
+                                    }
+                                )
+                            }
+                        }
+                        OutlinedTextField(
+                            value = viewModel.dni,
+                            onValueChange = { viewModel.dni = it.uppercase() },
+                            modifier = Modifier.weight(1f),
+                            label = { Text(strings.documentNumber) },
+                            singleLine = true,
+                            shape = RoundedCornerShape(14.dp),
+                            colors = inputColors,
+                            leadingIcon = { Icon(Icons.Default.Badge, null, tint = BlueAccent.copy(0.6f)) }
+                        )
+                    }
                     Spacer(Modifier.height(10.dp))
                     OutlinedTextField(value = viewModel.email, onValueChange = { viewModel.email = it }, modifier = Modifier.fillMaxWidth(), label = { Text(strings.email) }, singleLine = true, shape = RoundedCornerShape(14.dp), colors = inputColors, leadingIcon = { Icon(Icons.Default.Email, null, tint = BlueAccent.copy(0.6f)) })
                     Spacer(Modifier.height(10.dp))
