@@ -26,7 +26,7 @@ class RegisterViewModel : ViewModel() {
 
     fun validateDocumento(): Boolean {
         val dniRegex = Regex("^[0-9]{8}[A-Z]$")
-        val nieRegex = Regex("^[A-Z][0-9]{8}$")
+        val nieRegex = Regex("^[XYZ][0-9]{7}[A-Z]$")
         val passportRegex = Regex("^[A-Z]{3}[0-9]{6}$")
         return when (tipoDocumento) {
             "DNI" -> dniRegex.matches(dni)

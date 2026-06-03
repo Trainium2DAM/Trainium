@@ -75,6 +75,8 @@ fun PlatosScreen(
 
     LaunchedEffect(Unit) { viewModel.loadPlatos(isAdmin) }
 
+    var sugerenciaParaVer by remember { mutableStateOf<Plato?>(null) }
+
     LaunchedEffect(viewModel.error) {
         viewModel.error?.let { msg ->
             Toast.makeText(context, msg, Toast.LENGTH_SHORT).show()
@@ -245,7 +247,7 @@ fun PlatosScreen(
                     Spacer(Modifier.height(12.dp))
 
                     viewModel.sugerenciasPendientes.forEach { sug ->
-                        Card(Modifier.fillMaxWidth().padding(vertical = 6.dp), shape = RoundedCornerShape(16.dp), colors = CardDefaults.cardColors(containerColor = cardBg)) {
+                        Card(Modifier.fillMaxWidth().padding(vertical = 6.dp).clickable { sugerenciaParaVer = sug }, shape = RoundedCornerShape(16.dp), colors = CardDefaults.cardColors(containerColor = cardBg)) {
                             Row(Modifier.padding(14.dp), verticalAlignment = Alignment.CenterVertically) {
                                 if (!sug.imagenUrl.isNullOrEmpty()) {
                                     val b = decodeBase64ToBitmap(sug.imagenUrl!!)
@@ -257,8 +259,8 @@ fun PlatosScreen(
                                     Text("${strings.timeLabel} ${sug.tiempo ?: strings.notAvailable}", fontSize = 12.sp, color = subtitleColor)
                                 }
                                 Row {
-                                    IconButton(onClick = { viewModel.aprobarSugerencia(sug.id ?: return@IconButton); viewModel.loadPlatos(isAdmin) }) { Icon(Icons.Default.Check, contentDescription = strings.contentDescApprove, tint = Color(0xFF00E676)) }
-                                    IconButton(onClick = { viewModel.rechazarSugerencia(sug.id ?: return@IconButton); viewModel.loadPlatos(isAdmin) }) { Icon(Icons.Default.Close, contentDescription = strings.contentDescReject, tint = Color(0xFFFF6B6B)) }
+                                    IconButton(onClick = { viewModel.aprobarSugerencia(sug.id ?: return@IconButton, isAdmin) }) { Icon(Icons.Default.Check, contentDescription = strings.contentDescApprove, tint = Color(0xFF00E676)) }
+                                    IconButton(onClick = { viewModel.rechazarSugerencia(sug.id ?: return@IconButton, isAdmin) }) { Icon(Icons.Default.Close, contentDescription = strings.contentDescReject, tint = Color(0xFFFF6B6B)) }
                                 }
                             }
                         }
@@ -266,6 +268,59 @@ fun PlatosScreen(
                 }
             }
         }
+    }
+
+    // Diálogo para ver detalle de sugerencia pendiente
+    sugerenciaParaVer?.let { sug ->
+        AlertDialog(
+            onDismissRequest = { sugerenciaParaVer = null },
+            containerColor = cardBg,
+            title = { Text(sug.nombre, color = textColor, fontWeight = FontWeight.Bold) },
+            text = {
+                Column(Modifier.verticalScroll(rememberScrollState())) {
+                    if (!sug.imagenUrl.isNullOrEmpty()) {
+                        val b = decodeBase64ToBitmap(sug.imagenUrl!!)
+                        if (b != null) {
+                            Image(bitmap = b.asImageBitmap(), null, Modifier.fillMaxWidth().height(180.dp).clip(RoundedCornerShape(12.dp)), contentScale = ContentScale.Crop)
+                            Spacer(Modifier.height(12.dp))
+                        }
+                    }
+                    Row(horizontalArrangement = Arrangement.spacedBy(16.dp), verticalAlignment = Alignment.CenterVertically) {
+                        if (sug.calorias != null) {
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                Icon(Icons.Default.LocalFireDepartment, null, tint = Color(0xFFFF6B35), modifier = Modifier.size(16.dp))
+                                Text("${sug.calorias} kcal", color = BlueAccent, fontWeight = FontWeight.Bold, modifier = Modifier.padding(start = 4.dp))
+                            }
+                        }
+                        if (!sug.tiempo.isNullOrEmpty()) {
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                Icon(Icons.Default.Timer, null, tint = BlueAccent, modifier = Modifier.size(16.dp))
+                                Text(sug.tiempo!!, color = textColor.copy(0.6f), fontWeight = FontWeight.Medium, modifier = Modifier.padding(start = 4.dp))
+                            }
+                        }
+                    }
+                    Spacer(Modifier.height(12.dp))
+                    HorizontalDivider(color = textColor.copy(0.1f))
+                    Spacer(Modifier.height(12.dp))
+                    Text(sug.descripcion ?: strings.noDescription, color = textColor.copy(0.7f), fontSize = 15.sp, lineHeight = 22.sp)
+                }
+            },
+            confirmButton = {
+                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    TextButton(onClick = {
+                        sug.id?.let { viewModel.rechazarSugerencia(it, isAdmin) }
+                        sugerenciaParaVer = null
+                    }) { Text(strings.contentDescReject, color = Color(0xFFFF6B6B)) }
+                    Button(onClick = {
+                        sug.id?.let { viewModel.aprobarSugerencia(it, isAdmin) }
+                        sugerenciaParaVer = null
+                    }, colors = ButtonDefaults.buttonColors(containerColor = BlueAccent)) { Text(strings.contentDescApprove, color = Color.White) }
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { sugerenciaParaVer = null }) { Text(strings.cancel, color = textColor.copy(0.6f)) }
+            }
+        )
     }
 
     // Diálogo para sugerir plato

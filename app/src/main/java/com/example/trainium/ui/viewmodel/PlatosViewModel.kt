@@ -73,26 +73,32 @@ class PlatosViewModel : ViewModel() {
         }
     }
 
-    fun aprobarSugerencia(id: Int) {
+    fun aprobarSugerencia(id: Int, isAdmin: Boolean) {
         viewModelScope.launch {
+            isLoading = true
             try {
                 withContext(Dispatchers.IO) {
                     ServiceLocator.platoRepository.approve(id)
                 }
-                sugerenciasPendientes = sugerenciasPendientes.filter { it.id != id }
+                loadPlatos(isAdmin)
             } catch (_: Exception) {
+            } finally {
+                isLoading = false
             }
         }
     }
 
-    fun rechazarSugerencia(id: Int) {
+    fun rechazarSugerencia(id: Int, isAdmin: Boolean) {
         viewModelScope.launch {
+            isLoading = true
             try {
                 withContext(Dispatchers.IO) {
                     ServiceLocator.platoRepository.reject(id)
                 }
-                sugerenciasPendientes = sugerenciasPendientes.filter { it.id != id }
+                loadPlatos(isAdmin)
             } catch (_: Exception) {
+            } finally {
+                isLoading = false
             }
         }
     }
