@@ -3,49 +3,74 @@
 -- Ejecutar en MySQL/MariaDB
 -- ============================================
 
--- Añadir columnas que faltan a usuario
-ALTER TABLE usuario ADD COLUMN IF NOT EXISTS EMAIL VARCHAR(255) DEFAULT '';
-ALTER TABLE usuario ADD COLUMN IF NOT EXISTS TELEFONO VARCHAR(20) DEFAULT '';
-ALTER TABLE usuario ADD COLUMN IF NOT EXISTS ADMIN INT DEFAULT 0;
-ALTER TABLE usuario ADD COLUMN IF NOT EXISTS PREMIUM INT DEFAULT 0;
-ALTER TABLE usuario ADD COLUMN IF NOT EXISTS FECHA_INI_PREM DATE DEFAULT NULL;
-ALTER TABLE usuario ADD COLUMN IF NOT EXISTS FECHA_FIN_PREM DATE DEFAULT NULL;
-
--- Crear tabla plato_del_dia
-CREATE TABLE IF NOT EXISTS plato_del_dia (
-    ID INT AUTO_INCREMENT PRIMARY KEY,
-    NOMBRE VARCHAR(255) NOT NULL,
-    CALORIAS VARCHAR(50),
-    PROTEINAS VARCHAR(50),
-    CARBOHIDRATOS VARCHAR(50),
-    GRASAS VARCHAR(50),
-    AUTOR VARCHAR(255)
+CREATE TABLE maquinas (
+    nombre TEXT NOT NULL,
+    foto TEXT,
+    id BIGINT NOT NULL,
+    estado SMALLINT NOT NULL,
+    operativa BOOLEAN NOT NULL,
+    mantenimiento_desde TIMESTAMP WITHOUT TIME ZONE,
+    mantenimiento_hasta TIMESTAMP WITHOUT TIME ZONE,
+    descripcion TEXT,
+    tipo TEXT
 );
 
--- Crear tabla registro_peso
-CREATE TABLE IF NOT EXISTS registro_peso (
-    ID INT AUTO_INCREMENT PRIMARY KEY,
-    ID_USUARIO INT NOT NULL,
-    PESO DOUBLE NOT NULL,
-    FECHA DATE NOT NULL,
-    UNIQUE KEY uq_usuario_fecha (ID_USUARIO, FECHA)
+CREATE TABLE pagos (
+    id_usuario BIGINT,
+    id BIGINT NOT NULL,
+    monto DOUBLE PRECISION,
+    fecha_pago DATE,
+    metodo_pago TEXT,
+    tipo TEXT
 );
 
--- Crear tabla pagos
-CREATE TABLE IF NOT EXISTS pagos (
-    ID INT AUTO_INCREMENT PRIMARY KEY,
-    ID_USUARIO INT NOT NULL,
-    CONCEPTO VARCHAR(255),
-    MONTO DOUBLE,
-    FECHA DATE
+CREATE TABLE peso_usuario (
+    fecha DATE,
+    id_usuario BIGINT,
+    peso DOUBLE PRECISION NOT NULL,
+    id BIGINT NOT NULL
 );
 
--- Insertar platos de ejemplo
-INSERT IGNORE INTO plato_del_dia (NOMBRE, CALORIAS, PROTEINAS, CARBOHIDRATOS, GRASAS, AUTOR) VALUES
-('Pechuga de pollo con arroz integral', '450', '35', '55', '8', 'Chef TrainiumGym'),
-('Ensalada César con pollo', '380', '28', '20', '18', 'Chef TrainiumGym'),
-('Salmón a la plancha con verduras', '520', '40', '15', '30', 'Chef TrainiumGym'),
-('Tortilla de espinacas con avena', '350', '22', '40', '12', 'Chef TrainiumGym'),
-('Bowl de quinoa con atún', '480', '38', '45', '14', 'Chef TrainiumGym'),
-('Pasta integral con pavo y champiñones', '410', '30', '50', '10', 'Chef TrainiumGym'),
-('Wrap de pollo con aguacate', '390', '25', '35', '16', 'Chef TrainiumGym');
+CREATE TABLE platos (
+    fecha_subida DATE,
+    visibilidad BOOLEAN,
+    aceptado BOOLEAN,
+    id_usuario BIGINT,
+    id BIGINT NOT NULL,
+    imagen_url TEXT,
+    tiempo TEXT,
+    descripcion TEXT,
+    nombre TEXT NOT NULL,
+    calorias DOUBLE PRECISION
+);
+
+CREATE TABLE recomendacion_diaria (
+    id BIGINT NOT NULL,
+    id_plato_fk BIGINT,
+    fecha DATE
+);
+
+CREATE TABLE reservas (
+    id BIGINT NOT NULL,
+    estado BOOLEAN,
+    hora_fin TIME WITHOUT TIME ZONE,
+    hora_inicio TIME WITHOUT TIME ZONE,
+    fecha DATE,
+    id_maquina BIGINT,
+    id_usuario BIGINT
+);
+
+CREATE TABLE usuarios (
+    dni TEXT NOT NULL,
+    email TEXT,
+    foto TEXT,
+    contraseniaHash TEXT NOT NULL,
+    telefono TEXT,
+    fecha_fin_prem DATE,
+    fecha_reg DATE,
+    admin INTEGER NOT NULL,
+    fecha_ini_prem DATE,
+    premium BOOLEAN,
+    nombre TEXT NOT NULL,
+    id BIGINT NOT NULL
+);
