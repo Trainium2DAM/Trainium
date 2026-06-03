@@ -86,10 +86,12 @@ object NotificationHelper {
 
     suspend fun rescheduleNextReservationNotification(context: Context, userId: Int) {
         try {
+            val settings = NotificationSettingsManager(context)
+            if (!settings.notificationsEnabled.first()) return
+
             val repo = ReservaRepository()
             val list = repo.getAllWithDetails(isAdmin = false, userId = userId)
 
-            val settings = NotificationSettingsManager(context)
             val minutesBefore = settings.minutesBefore.first()
 
             val fmt = SimpleDateFormat("yyyy-MM-dd HH:mm", Locale.getDefault())

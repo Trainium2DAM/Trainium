@@ -163,13 +163,13 @@ val StringsDe = AppStrings(
     dateFromTo = "Vom %s bis %s",
 
     filterPast = "Vergangene",
-    addToCalendar = "Zum Kalender hinzuf�gen",
-    addToCalendarMessage = "M�chten Sie dieses Ereignis zum Kalender Ihres Ger�ts hinzuf�gen?",
+    addToCalendar = "Zum Kalender hinzufügen",
+    addToCalendarMessage = "Möchten Sie dieses Ereignis zum Kalender Ihres Geräts hinzufügen?",
     reservationBooked = "Reservierung abgeschlossen!",
     notificationsTitle = "Benachrichtigungen",
     notifyBeforeLabel = "Benachrichtigung vor:",
     reminderTitle = "Reservierungserinnerung",
-    reminderBody = "%1${"$"}s: %2${"$"}s � %3${"$"}s"
+    reminderBody = "%1\$s: %2\$s – %3\$s"
 )
 
 val StringsPt = AppStrings(
@@ -335,10 +335,10 @@ val StringsPt = AppStrings(
     dateFromTo = "De %s a %s",
 
     filterPast = "Passadas",
-    addToCalendar = "Adicionar ao calend�rio",
-    addToCalendarMessage = "Deseja adicionar este evento ao calend�rio do seu dispositivo?",
+    addToCalendar = "Adicionar ao calendário",
+    addToCalendarMessage = "Deseja adicionar este evento ao calendário do seu dispositivo?",
     reservationBooked = "Reserva realizada!",
-    notificationsTitle = "Notifica��es",
+    notificationsTitle = "Notificações",
     notifyBeforeLabel = "Avisar-me antes de:",
     reminderTitle = "Lembrete de Reserva",
     reminderBody = "%1\$s: %2\$s - %3\$s"

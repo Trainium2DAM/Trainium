@@ -166,7 +166,7 @@ val StringsVal = AppStrings(
     addToCalendarMessage = "Vols afegir este event al calendari del dispositiu?",
     reservationBooked = "Reserva realitzada!",
     notificationsTitle = "Notificacions",
-    notifyBeforeLabel = "Avisar-me amb antelaci� de:",
+    notifyBeforeLabel = "Avisar-me amb antelació de:",
     reminderTitle = "Recordatori de Reserva",
     reminderBody = "%1\$s: %2\$s – %3\$s"
 )

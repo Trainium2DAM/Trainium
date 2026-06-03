@@ -57,7 +57,13 @@ fun EditProfileScreen(
     val snackbarHostState = remember { SnackbarHostState() }
     val notifManager = remember { NotificationSettingsManager(context) }
     var selectedMinutes by remember { mutableStateOf(NotificationSettingsManager.DEFAULT_MINUTES) }
-    LaunchedEffect(Unit) { notifManager.minutesBefore.collectLatest { selectedMinutes = it } }
+    var notifsEnabled by remember { mutableStateOf(true) }
+    LaunchedEffect(Unit) {
+        notifManager.minutesBefore.collectLatest { selectedMinutes = it }
+    }
+    LaunchedEffect(Unit) {
+        notifManager.notificationsEnabled.collectLatest { notifsEnabled = it }
+    }
 
     val galeriaLauncher = rememberLauncherForActivityResult(ActivityResultContracts.GetContent()) { uri: Uri? ->
         uri?.let { scope.launch { val base64 = uriToBase64(it, context.contentResolver); viewModel.setFoto(base64) } }
@@ -261,43 +267,53 @@ fun EditProfileScreen(
                                 Modifier.size(36.dp).background(BlueAccent.copy(0.12f), RoundedCornerShape(10.dp)),
                                 contentAlignment = Alignment.Center
                             ) {
-                                Icon(Icons.Default.Notifications, contentDescription = null, tint = BlueAccent, modifier = Modifier.size(20.dp))
+                                Icon(Icons.Default.Notifications, contentDescription = null, tint = if (notifsEnabled) BlueAccent else textColor.copy(0.3f), modifier = Modifier.size(20.dp))
                             }
                             Spacer(Modifier.width(12.dp))
-                            Column {
+                            Column(Modifier.weight(1f)) {
                                 Text(strings.notificationsTitle, fontWeight = FontWeight.Bold, color = textColor, fontSize = 14.sp)
                                 Text(strings.notifyBeforeLabel, fontSize = 11.sp, color = textColor.copy(0.45f))
                             }
+                            Switch(
+                                checked = notifsEnabled,
+                                onCheckedChange = { enabled ->
+                                    notifsEnabled = enabled
+                                    scope.launch { notifManager.setNotificationsEnabled(enabled) }
+                                },
+                                colors = SwitchDefaults.colors(checkedTrackColor = BlueAccent)
+                            )
                         }
-                        Spacer(Modifier.height(14.dp))
-                        Row(
-                            Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.spacedBy(6.dp)
-                        ) {
-                            NotificationSettingsManager.OPTIONS.forEach { min ->
-                                val label = when (min) {
-                                    60  -> "1h"
-                                    120 -> "2h"
-                                    else -> "${min}m"
-                                }
-                                val sel = selectedMinutes == min
-                                FilterChip(
-                                    selected = sel,
-                                    onClick = {
-                                        selectedMinutes = min
-                                        scope.launch { notifManager.setMinutesBefore(min) }
-                                    },
-                                    label = { Text(label, fontSize = 12.sp, fontWeight = if (sel) FontWeight.Bold else FontWeight.Normal) },
-                                    colors = FilterChipDefaults.filterChipColors(
-                                        selectedContainerColor = BlueAccent,
-                                        selectedLabelColor = Color.White,
-                                        labelColor = textColor.copy(0.6f),
-                                        containerColor = if (darkTheme) Color(0xFF1E2D52) else Color(0xFFF0F4FF)
-                                    ),
-                                    border = FilterChipDefaults.filterChipBorder(
-                                        borderColor = BlueAccent.copy(0.2f), enabled = true, selected = sel
+                        if (notifsEnabled) {
+                            Spacer(Modifier.height(14.dp))
+                            Row(
+                                Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.spacedBy(6.dp)
+                            ) {
+                                NotificationSettingsManager.OPTIONS.forEach { min ->
+                                    val label = when (min) {
+                                        60  -> "1h"
+                                        120 -> "2h"
+                                        else -> "${min}m"
+                                    }
+                                    val sel = selectedMinutes == min
+                                    FilterChip(
+                                        selected = sel,
+                                        onClick = {
+                                            selectedMinutes = min
+                                            scope.launch { notifManager.setMinutesBefore(min) }
+                                        },
+                                        label = { Text(label, fontSize = 12.sp, fontWeight = if (sel) FontWeight.Bold else FontWeight.Normal) },
+                                        colors = FilterChipDefaults.filterChipColors(
+                                            selectedContainerColor = BlueAccent,
+                                            selectedLabelColor = Color.White,
+                                            labelColor = textColor.copy(0.6f),
+                                            containerColor = if (darkTheme) Color(0xFF1E2D52) else Color(0xFFF0F4FF)
+                                        ),
+                                        border = FilterChipDefaults.filterChipBorder(
+                                            borderColor = BlueAccent.copy(0.2f), enabled = true, selected = sel
+                                        )
                                     )
-                                )
+                                }
                             }
                         }
                     }

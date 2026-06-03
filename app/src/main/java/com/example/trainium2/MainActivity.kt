@@ -93,6 +93,7 @@ class MainActivity : ComponentActivity() {
                     val navController = rememberNavController()
                     val navBackStackEntry by navController.currentBackStackEntryAsState()
                     val currentRoute = navBackStackEntry?.destination?.route
+                    var isAdmin by remember { mutableStateOf(false) }
 
                     SideEffect {
                         window?.let { w ->
@@ -144,6 +145,7 @@ class MainActivity : ComponentActivity() {
                                 val sesion = SecureSessionManager.obtenerSesion()
                                 LaunchedEffect(Unit) {
                                     if (sesion != null) {
+                                        isAdmin = sesion.isAdmin
                                         navController.navigate("profile/${sesion.userId}") {
                                             popUpTo("loading") { inclusive = true }
                                         }
@@ -172,7 +174,8 @@ class MainActivity : ComponentActivity() {
                                     onBack = { navController.popBackStack() },
                                     onNavigateToRegister = { navController.navigate("register") },
                                     onNavigateToForgot = { navController.navigate("forgot") },
-                                    onLoginSuccess = { _, isAdmin, idUsuario, isPremium ->
+                                    onLoginSuccess = { _, admin, idUsuario, isPremium ->
+                                        isAdmin = admin == 1
                                         navController.navigate("profile/$idUsuario")
                                     }
                                 )
@@ -193,10 +196,10 @@ class MainActivity : ComponentActivity() {
     SecureSessionManager.cerrarSesion()
     navController.navigate("main") { popUpTo(0) }
 },
-                                    onNavigateToMaquinas = { navController.navigate("maquinas/0/$idUsuario") },
+                                    onNavigateToMaquinas = { navController.navigate("maquinas/${if (isAdmin) 1 else 0}/$idUsuario") },
                                     onNavigateToEditProfile = { navController.navigate("edit_profile/$idUsuario") },
-                                    onNavigateToReservas = { navController.navigate("reservas/0/$idUsuario") },
-                                    onNavigateToPlatos = { navController.navigate("platos/0/$idUsuario") },
+                                    onNavigateToReservas = { navController.navigate("reservas/${if (isAdmin) 1 else 0}/$idUsuario") },
+                                    onNavigateToPlatos = { navController.navigate("platos/${if (isAdmin) 1 else 0}/$idUsuario") },
                                     onNavigateToRegistroPeso = { navController.navigate("registro/$idUsuario") },
                                     onNavigateToHistorial = { navController.navigate("historial/$idUsuario") },
                                     onNavigateToPremium = { navController.navigate("premium_selection/$idUsuario") }

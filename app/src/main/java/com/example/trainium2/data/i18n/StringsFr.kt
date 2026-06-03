@@ -162,12 +162,12 @@ val StringsFr = AppStrings(
     daysLeft = "jours restants",
     dateFromTo = "Du %s au %s",
 
-    filterPast = "Pass�es",
+    filterPast = "Passées",
     addToCalendar = "Ajouter au calendrier",
-    addToCalendarMessage = "Souhaitez-vous ajouter cet �v�nement au calendrier de votre appareil ?",
-    reservationBooked = "R�servation effectu�e !",
+    addToCalendarMessage = "Souhaitez-vous ajouter cet événement au calendrier de votre appareil ?",
+    reservationBooked = "Réservation effectuée !",
     notificationsTitle = "Notifications",
-    notifyBeforeLabel = "Me pr�venir avant :",
-    reminderTitle = "Rappel de R�servation",
+    notifyBeforeLabel = "Me prévenir avant :",
+    reminderTitle = "Rappel de Réservation",
     reminderBody = "%1\$s: %2\$s – %3\$s"
 )
