@@ -36,6 +36,8 @@ class PremiumSelectionViewModel : ViewModel() {
     var fechaInicioCalculada by mutableStateOf("")
     var fechaFinCalculada by mutableStateOf("")
 
+    fun clearError() { errorMessage = null }
+
     fun loadUser(id: Int) {
         viewModelScope.launch {
             val user = withContext(Dispatchers.IO) {
@@ -64,15 +66,46 @@ class PremiumSelectionViewModel : ViewModel() {
         fechaFinCalculada = AppConfig.FORMAT_ISO_DATE.format(cal.time)
     }
 
+    var errorMessage by mutableStateOf<String?>(null)
+
     fun validateCard(): Boolean {
-        val limpio = numeroTarjeta.filter { it.isDigit() }
-        return limpio.length <= 16 && cvv.filter { it.isDigit() }.length <= 3
+        val cardClean = numeroTarjeta.filter { it.isDigit() }
+        if (cardClean.length < 13 || cardClean.length > 16) {
+            errorMessage = "invalid_card_number"
+            return false
+        }
+        val cvvClean = cvv.filter { it.isDigit() }
+        if (cvvClean.length != 3) {
+            errorMessage = "invalid_cvv"
+            return false
+        }
+        val parts = fechaVencimiento.split("/")
+        if (parts.size != 2) {
+            errorMessage = "invalid_expiry_date"
+            return false
+        }
+        val mes = parts[0].toIntOrNull()
+        val anio = parts[1].toIntOrNull()
+        if (mes == null || anio == null || mes < 1 || mes > 12) {
+            errorMessage = "invalid_expiry_date"
+            return false
+        }
+        val cal = Calendar.getInstance()
+        val anioActual = cal.get(Calendar.YEAR) % 100
+        val mesActual = cal.get(Calendar.MONTH) + 1
+        if (anio < anioActual || (anio == anioActual && mes < mesActual)) {
+            errorMessage = "card_expired"
+            return false
+        }
+        return true
     }
 
     fun purchase(idUsuario: Int, onSuccess: () -> Unit) {
         viewModelScope.launch {
             isLoading = true
+            errorMessage = null
             try {
+                if (!validateCard()) return@launch
                 val plan = planes.getOrNull(planSeleccionado) ?: return@launch
                 val hoy = AppConfig.FORMAT_ISO_DATE.format(Date())
 

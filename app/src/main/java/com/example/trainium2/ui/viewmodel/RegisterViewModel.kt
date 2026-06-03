@@ -47,9 +47,9 @@ class RegisterViewModel : ViewModel() {
                 }
                 if (!validateDocumento()) {
                     errorMessage = when (tipoDocumento) {
-                        "DNI" -> "Formato de DNI inválido (8 dígitos + letra, ej: 12345678A)"
-                        "NIE" -> "Formato de NIE inválido (letra + 8 dígitos, ej: A12345678)"
-                        else -> "Formato de pasaporte inválido (3 letras + 6 dígitos, ej: AAA000000)"
+                        "DNI" -> "invalid_dni"
+                        "NIE" -> "invalid_nie"
+                        else -> "invalid_passport"
                     }
                     return@launch
                 }

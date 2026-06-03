@@ -121,8 +121,14 @@ fun RegisterScreen(isDarkTheme: Boolean, onToggleTheme: () -> Unit, onToggleLang
     }
 
     LaunchedEffect(viewModel.errorMessage) {
-        viewModel.errorMessage?.let {
-            Toast.makeText(context, it, Toast.LENGTH_SHORT).show()
+        viewModel.errorMessage?.let { code ->
+            val msg = when (code) {
+                "invalid_dni" -> strings.invalidDni
+                "invalid_nie" -> strings.invalidNie
+                "invalid_passport" -> strings.invalidPassport
+                else -> code
+            }
+            Toast.makeText(context, msg, Toast.LENGTH_SHORT).show()
             viewModel.clearError()
         }
     }

@@ -58,6 +58,19 @@ fun PremiumSelectionScreen(
 
     LaunchedEffect(Unit) { delay(100); visible = true }
     LaunchedEffect(userId) { viewModel.loadUser(userId) }
+    LaunchedEffect(viewModel.errorMessage) {
+        viewModel.errorMessage?.let { code ->
+            val msg = when (code) {
+                "invalid_card_number" -> strings.invalidCardNumber
+                "invalid_cvv" -> strings.invalidCvv
+                "invalid_expiry_date" -> strings.invalidExpiryDate
+                "card_expired" -> strings.cardExpired
+                else -> code
+            }
+            Toast.makeText(context, msg, Toast.LENGTH_SHORT).show()
+            viewModel.clearError()
+        }
+    }
 
     Box(Modifier.fillMaxSize().background(bgBrush)) {
         Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(horizontal = 20.dp)) {
